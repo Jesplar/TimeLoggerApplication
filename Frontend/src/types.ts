@@ -20,6 +20,7 @@ export interface TimeEntry {
   projectId: number;
   projectName: string;
   projectNumber: string;
+  customerId: number;
   customerName: string;
   date: string;
   hours?: number;

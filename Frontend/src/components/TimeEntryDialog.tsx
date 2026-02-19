@@ -42,7 +42,7 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
 
   useEffect(() => {
     if (editEntry) {
-      setSelectedCustomerId(editEntry.projectId); // Will be set properly after loading projects
+      setSelectedCustomerId(editEntry.customerId);
       setSelectedProjectId(editEntry.projectId);
       setDate(formatDate(editEntry.date));
       setDescription(editEntry.description || '');

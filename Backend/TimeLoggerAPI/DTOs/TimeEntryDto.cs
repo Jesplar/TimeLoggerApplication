@@ -6,6 +6,7 @@ public class TimeEntryDto
     public int ProjectId { get; set; }
     public string ProjectName { get; set; } = string.Empty;
     public string ProjectNumber { get; set; } = string.Empty;
+    public int CustomerId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
     public DateTime Date { get; set; }
     public decimal? Hours { get; set; }
