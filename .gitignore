@@ -1,0 +1,197 @@
+# Time Logger Application - Git Ignore File
+
+# ===============================================
+# .NET / C# Backend
+# ===============================================
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa]rm/
+[Aa]rm64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio cache/options
+.vs/
+.vscode/
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# ===============================================
+# Node / React Frontend
+# ===============================================
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build output
+dist/
+dist-ssr/
+*.local
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ===============================================
+# Electron
+# ===============================================
+# Electron build output
+Electron/dist/
+Electron/out/
+Electron/backend/
+
+# Electron-builder output
+Electron/dist_electron/
+*.exe
+*.dmg
+*.AppImage
+*.deb
+*.rpm
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# ===============================================
+# Database Files
+# ===============================================
+# SQL Server LocalDB files (if they somehow get created in repo)
+*.mdf
+*.ldf
+*.ndf
+
+# SQLite files (legacy, but keep for safety)
+*.db
+*.sqlite
+*.sqlite3
+
+# ===============================================
+# Logs and temp files
+# ===============================================
+*.log
+logs/
+temp/
+tmp/
+
+# ===============================================
+# Build Scripts Output
+# ===============================================
+# None needed - scripts are part of repo
+
+# ===============================================
+# IDE and Editor files
+# ===============================================
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# ===============================================
+# Operating System Files
+# ===============================================
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+
+# ===============================================
+# Backup Files
+# ===============================================
+*.bak
+*.backup
+*.old
+*.orig
+
+# ===============================================
+# Package outputs (installers)
+# ===============================================
+# Keep installers out of repo - they're large
+*.exe
+*.msi
+*.msix
+*.appx
+*.dmg
+*.pkg
+*.deb
+*.rpm
+*.snap
+*.AppImage
+
+# Electron-builder outputs
+release/

@@ -1,0 +1,6 @@
+@TimeLoggerAPI_HostAddress = http://localhost:5258
+
+GET {{TimeLoggerAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

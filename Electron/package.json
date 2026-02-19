@@ -1,0 +1,36 @@
+{
+  "name": "timelogger-electron",
+  "version": "1.0.0",
+  "description": "Time Logger Desktop Application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.timelogger.app",
+    "productName": "Time Logger",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "frontend/**/*",
+      "backend/**/*"
+    ],
+    "asarUnpack": [
+      "backend/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico"
+    }
+  }
+}
