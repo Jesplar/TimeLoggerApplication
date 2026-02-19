@@ -10,7 +10,7 @@ builder.Services.AddOpenApi();
 
 // Configure SQL Server LocalDB database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? "Server=(localdb)\\mssqllocaldb;Database=TimeLogger;Trusted_Connection=true;MultipleActiveResultSets=true";
+    ?? "Server=(localdb)\\mssqllocaldb;Database=TimeLoggerTest;Trusted_Connection=true;MultipleActiveResultSets=true";
 
 builder.Services.AddDbContext<TimeLoggerContext>(options =>
     options.UseSqlServer(connectionString));
@@ -28,11 +28,23 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Ensure database is created and migrations are applied
+// Ensure database exists (use CanConnect instead of EnsureCreated for existing databases)
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<TimeLoggerContext>();
-    context.Database.EnsureCreated();
+    try
+    {
+        // Try to connect - if it fails, create the database
+        if (!context.Database.CanConnect())
+        {
+            context.Database.EnsureCreated();
+        }
+    }
+    catch
+    {
+        // If connection fails, try to create
+        context.Database.EnsureCreated();
+    }
 }
 
 // Configure the HTTP request pipeline

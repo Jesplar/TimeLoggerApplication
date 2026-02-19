@@ -13,6 +13,9 @@ public class TimeEntryDto
     public TimeSpan? StartTime { get; set; }
     public TimeSpan? EndTime { get; set; }
     public string? Description { get; set; }
+    public bool IsOnSite { get; set; }
+    public decimal? TravelHours { get; set; }
+    public decimal? TravelKm { get; set; }
     public DateTime CreatedDate { get; set; }
     public DateTime? ModifiedDate { get; set; }
 }
@@ -25,6 +28,9 @@ public class CreateTimeEntryDto
     public TimeSpan? StartTime { get; set; }
     public TimeSpan? EndTime { get; set; }
     public string? Description { get; set; }
+    public bool IsOnSite { get; set; }
+    public decimal? TravelHours { get; set; }
+    public decimal? TravelKm { get; set; }
 }
 
 public class UpdateTimeEntryDto
@@ -35,6 +41,9 @@ public class UpdateTimeEntryDto
     public TimeSpan? StartTime { get; set; }
     public TimeSpan? EndTime { get; set; }
     public string? Description { get; set; }
+    public bool IsOnSite { get; set; }
+    public decimal? TravelHours { get; set; }
+    public decimal? TravelKm { get; set; }
 }
 
 public class WeeklySummaryDto

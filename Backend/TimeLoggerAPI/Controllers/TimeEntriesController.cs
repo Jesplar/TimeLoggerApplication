@@ -66,6 +66,9 @@ public class TimeEntriesController : ControllerBase
                 StartTime = t.StartTime,
                 EndTime = t.EndTime,
                 Description = t.Description,
+                IsOnSite = t.IsOnSite,
+                TravelHours = t.TravelHours,
+                TravelKm = t.TravelKm,
                 CreatedDate = t.CreatedDate,
                 ModifiedDate = t.ModifiedDate
             })
@@ -136,6 +139,9 @@ public class TimeEntriesController : ControllerBase
                     StartTime = e.Entry.StartTime,
                     EndTime = e.Entry.EndTime,
                     Description = e.Entry.Description,
+                    IsOnSite = e.Entry.IsOnSite,
+                    TravelHours = e.Entry.TravelHours,
+                    TravelKm = e.Entry.TravelKm,
                     CreatedDate = e.Entry.CreatedDate,
                     ModifiedDate = e.Entry.ModifiedDate
                 }).ToList(),
@@ -201,6 +207,9 @@ public class TimeEntriesController : ControllerBase
             StartTime = entry.StartTime,
             EndTime = entry.EndTime,
             Description = entry.Description,
+            IsOnSite = entry.IsOnSite,
+            TravelHours = entry.TravelHours,
+            TravelKm = entry.TravelKm,
             CreatedDate = entry.CreatedDate,
             ModifiedDate = entry.ModifiedDate
         };
@@ -231,6 +240,9 @@ public class TimeEntriesController : ControllerBase
             StartTime = createDto.StartTime,
             EndTime = createDto.EndTime,
             Description = createDto.Description?.Trim(),
+            IsOnSite = createDto.IsOnSite,
+            TravelHours = createDto.TravelHours,
+            TravelKm = createDto.TravelKm,
             CreatedDate = DateTime.UtcNow
         };
 
@@ -254,6 +266,9 @@ public class TimeEntriesController : ControllerBase
             StartTime = entry.StartTime,
             EndTime = entry.EndTime,
             Description = entry.Description,
+            IsOnSite = entry.IsOnSite,
+            TravelHours = entry.TravelHours,
+            TravelKm = entry.TravelKm,
             CreatedDate = entry.CreatedDate,
             ModifiedDate = entry.ModifiedDate
         };
@@ -289,6 +304,9 @@ public class TimeEntriesController : ControllerBase
         entry.StartTime = updateDto.StartTime;
         entry.EndTime = updateDto.EndTime;
         entry.Description = updateDto.Description?.Trim();
+        entry.IsOnSite = updateDto.IsOnSite;
+        entry.TravelHours = updateDto.TravelHours;
+        entry.TravelKm = updateDto.TravelKm;
         entry.ModifiedDate = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();

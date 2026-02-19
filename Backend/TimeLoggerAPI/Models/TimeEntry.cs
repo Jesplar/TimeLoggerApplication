@@ -9,6 +9,9 @@ public class TimeEntry
     public TimeSpan? StartTime { get; set; }
     public TimeSpan? EndTime { get; set; }
     public string? Description { get; set; }
+    public bool IsOnSite { get; set; } = false;
+    public decimal? TravelHours { get; set; }
+    public decimal? TravelKm { get; set; }
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
     public DateTime? ModifiedDate { get; set; }
     

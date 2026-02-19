@@ -46,6 +46,10 @@ public class ReportsController : ControllerBase
                 Customer = g.Key.Name,
                 TotalEntries = g.Count(),
                 TotalHours = g.Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+                RegularHours = g.Where(te => !te.IsOnSite).Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+                OnSiteHours = g.Where(te => te.IsOnSite).Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+                TravelHours = g.Sum(te => (double)(te.TravelHours ?? 0)),
+                TravelKm = g.Sum(te => (double)(te.TravelKm ?? 0)),
                 Period = $"{startDate:MMMM yyyy}"
             })
             .OrderByDescending(r => r.TotalHours)
@@ -89,6 +93,10 @@ public class ReportsController : ControllerBase
                 ProjectName = g.Key.ProjectName,
                 Entries = g.Count(),
                 TotalHours = g.Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+                RegularHours = g.Where(te => !te.IsOnSite).Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+                OnSiteHours = g.Where(te => te.IsOnSite).Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+                TravelHours = g.Sum(te => (double)(te.TravelHours ?? 0)),
+                TravelKm = g.Sum(te => (double)(te.TravelKm ?? 0)),
                 Period = $"{startDate:MMMM yyyy}"
             })
             .OrderBy(r => r.Customer)
@@ -126,6 +134,9 @@ public class ReportsController : ControllerBase
             ProjectNumber = te.Project.ProjectNumber,
             ProjectName = te.Project.Name,
             Hours = CalculateHours(te.Hours, te.StartTime, te.EndTime),
+            IsOnSite = te.IsOnSite,
+            TravelHours = (double)(te.TravelHours ?? 0),
+            TravelKm = (double)(te.TravelKm ?? 0),
             StartTime = te.StartTime,
             EndTime = te.EndTime,
             Description = te.Description ?? string.Empty
@@ -158,6 +169,9 @@ public class ReportsController : ControllerBase
             ProjectNumber = te.Project.ProjectNumber,
             Project = te.Project.Name,
             Hours = CalculateHours(te.Hours, te.StartTime, te.EndTime),
+            IsOnSite = te.IsOnSite,
+            TravelHours = (double)(te.TravelHours ?? 0),
+            TravelKm = (double)(te.TravelKm ?? 0),
             StartTime = te.StartTime,
             EndTime = te.EndTime,
             Description = te.Description ?? string.Empty
@@ -185,6 +199,10 @@ public class ReportsController : ControllerBase
                 ActiveProjects = g.Select(te => te.ProjectId).Distinct().Count(),
                 TotalEntries = g.Count(),
                 TotalHours = g.Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+                RegularHours = g.Where(te => !te.IsOnSite).Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+                OnSiteHours = g.Where(te => te.IsOnSite).Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+                TravelHours = g.Sum(te => (double)(te.TravelHours ?? 0)),
+                TravelKm = g.Sum(te => (double)(te.TravelKm ?? 0)),
                 FirstEntry = g.Min(te => te.Date),
                 LastEntry = g.Max(te => te.Date)
             })
@@ -211,6 +229,10 @@ public class ReportsController : ControllerBase
             Active = p.IsActive,
             TotalEntries = p.TimeEntries.Count,
             TotalHours = p.TimeEntries.Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+            RegularHours = p.TimeEntries.Where(te => !te.IsOnSite).Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+            OnSiteHours = p.TimeEntries.Where(te => te.IsOnSite).Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+            TravelHours = p.TimeEntries.Sum(te => (double)(te.TravelHours ?? 0)),
+            TravelKm = p.TimeEntries.Sum(te => (double)(te.TravelKm ?? 0)),
             LastActivity = p.TimeEntries.Any() ? p.TimeEntries.Max(te => te.Date) : (DateTime?)null,
             DaysSinceLastEntry = p.TimeEntries.Any() 
                 ? (DateTime.Today - p.TimeEntries.Max(te => te.Date)).Days 
@@ -242,6 +264,10 @@ public class ReportsController : ControllerBase
             CustomersServed = entries.Select(te => te.Project.CustomerId).Distinct().Count(),
             TotalEntries = entries.Count,
             TotalHours = entries.Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+            RegularHours = entries.Where(te => !te.IsOnSite).Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+            OnSiteHours = entries.Where(te => te.IsOnSite).Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+            TravelHours = entries.Sum(te => (double)(te.TravelHours ?? 0)),
+            TravelKm = entries.Sum(te => (double)(te.TravelKm ?? 0)),
             AvgHoursPerEntry = entries.Any() 
                 ? entries.Average(te => CalculateHours(te.Hours, te.StartTime, te.EndTime))
                 : 0
@@ -270,6 +296,10 @@ public class ReportsController : ControllerBase
                 YearMonth = $"{g.Key.Year}-{g.Key.Month:D2}",
                 Entries = g.Count(),
                 TotalHours = g.Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+                RegularHours = g.Where(te => !te.IsOnSite).Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+                OnSiteHours = g.Where(te => te.IsOnSite).Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+                TravelHours = g.Sum(te => (double)(te.TravelHours ?? 0)),
+                TravelKm = g.Sum(te => (double)(te.TravelKm ?? 0)),
                 ProjectsActive = g.Select(te => te.ProjectId).Distinct().Count(),
                 CustomersActive = g.Select(te => te.Project.CustomerId).Distinct().Count()
             })

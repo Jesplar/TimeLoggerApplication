@@ -18,6 +18,8 @@ import type {
   ProjectStatusReport,
   YearToDateSummary,
   MonthlyComparison,
+  Settings,
+  UpdateSettingsDto,
 } from './types';
 
 const API_BASE_URL = (window as any).API_URL || 'http://localhost:5000/api';
@@ -193,5 +195,16 @@ export const exportTimeEntries = async (startDate?: string, endDate?: string): P
     params: { startDate, endDate },
     responseType: 'blob',
   });
+  return response.data;
+};
+
+// Settings
+export const getSettings = async (): Promise<Settings> => {
+  const response = await api.get<Settings>('/settings');
+  return response.data;
+};
+
+export const updateSettings = async (data: UpdateSettingsDto): Promise<Settings> => {
+  const response = await api.put<Settings>('/settings', data);
   return response.data;
 };

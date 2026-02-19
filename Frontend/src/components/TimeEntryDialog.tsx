@@ -31,6 +31,9 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [description, setDescription] = useState('');
+  const [isOnSite, setIsOnSite] = useState(false);
+  const [travelHours, setTravelHours] = useState('');
+  const [travelKm, setTravelKm] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -46,6 +49,9 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
       setSelectedProjectId(editEntry.projectId);
       setDate(formatDate(editEntry.date));
       setDescription(editEntry.description || '');
+      setIsOnSite(editEntry.isOnSite);
+      setTravelHours(editEntry.travelHours?.toString() || '');
+      setTravelKm(editEntry.travelKm?.toString() || '');
       
       if (editEntry.hours) {
         setEntryMode('hours');
@@ -65,6 +71,9 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
       setStartTime('');
       setEndTime('');
       setDescription('');
+      setIsOnSite(false);
+      setTravelHours('');
+      setTravelKm('');
     }
     setError('');
   }, [editEntry, isOpen, lastUsedCustomerId, lastUsedProjectId, initialDate]);
@@ -124,6 +133,9 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
       projectId: selectedProjectId,
       date: date,
       description: description.trim() || undefined,
+      isOnSite: isOnSite,
+      travelHours: travelHours ? parseFloat(travelHours) : undefined,
+      travelKm: travelKm ? parseFloat(travelKm) : undefined,
     };
 
     if (entryMode === 'hours') {
@@ -298,6 +310,44 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
               </div>
             </>
           )}
+
+          <div className="form-group">
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input
+                type="checkbox"
+                checked={isOnSite}
+                onChange={(e) => setIsOnSite(e.target.checked)}
+              />
+              On Site Work
+            </label>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="travelHours">Travel Time (Hours, Optional)</label>
+            <input
+              type="number"
+              id="travelHours"
+              value={travelHours}
+              onChange={(e) => setTravelHours(e.target.value)}
+              step="0.25"
+              min="0"
+              max="24"
+              placeholder="e.g., 2 or 1.5"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="travelKm">Travel Distance (km, Optional)</label>
+            <input
+              type="number"
+              id="travelKm"
+              value={travelKm}
+              onChange={(e) => setTravelKm(e.target.value)}
+              step="1"
+              min="0"
+              placeholder="e.g., 150"
+            />
+          </div>
 
           <div className="form-group">
             <label htmlFor="description">Description (Optional)</label>

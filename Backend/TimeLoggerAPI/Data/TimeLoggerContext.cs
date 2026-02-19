@@ -12,6 +12,7 @@ public class TimeLoggerContext : DbContext
     public DbSet<Customer> Customers { get; set; } = null!;
     public DbSet<Project> Projects { get; set; } = null!;
     public DbSet<TimeEntry> TimeEntries { get; set; } = null!;
+    public DbSet<Settings> Settings { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -47,6 +48,8 @@ public class TimeLoggerContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Hours).HasPrecision(5, 2);
+            entity.Property(e => e.TravelHours).HasPrecision(5, 2);
+            entity.Property(e => e.TravelKm).HasPrecision(6, 2);
             entity.Property(e => e.Description).HasMaxLength(500);
             
             // Indexes for query performance
@@ -58,6 +61,27 @@ public class TimeLoggerContext : DbContext
                 .WithMany(p => p.TimeEntries)
                 .HasForeignKey(e => e.ProjectId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Settings configuration
+        modelBuilder.Entity<Settings>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.SekToEurRate).HasPrecision(10, 4);
+            entity.Property(e => e.HourlyRateEur).HasPrecision(10, 2);
+            entity.Property(e => e.TravelHourlyRateEur).HasPrecision(10, 2);
+            entity.Property(e => e.KmCost).HasPrecision(10, 2);
+            
+            // Seed initial values
+            entity.HasData(new Settings
+            {
+                Id = 1,
+                SekToEurRate = 11.36m,
+                HourlyRateEur = 152m,
+                TravelHourlyRateEur = 83.20m,
+                KmCost = 0.80m,
+                CreatedDate = DateTime.UtcNow
+            });
         });
     }
 }

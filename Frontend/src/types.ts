@@ -27,6 +27,9 @@ export interface TimeEntry {
   startTime?: string;
   endTime?: string;
   description?: string;
+  isOnSite: boolean;
+  travelHours?: number;
+  travelKm?: number;
   createdDate: string;
   modifiedDate?: string;
 }
@@ -38,6 +41,9 @@ export interface CreateTimeEntryDto {
   startTime?: string;
   endTime?: string;
   description?: string;
+  isOnSite: boolean;
+  travelHours?: number;
+  travelKm?: number;
 }
 
 export interface UpdateTimeEntryDto extends CreateTimeEntryDto {}
@@ -90,6 +96,10 @@ export interface MonthlyCustomerReport {
   customer: string;
   totalEntries: number;
   totalHours: number;
+  regularHours: number;
+  onSiteHours: number;
+  travelHours: number;
+  travelKm: number;
   period: string;
 }
 
@@ -99,6 +109,10 @@ export interface MonthlyProjectReport {
   projectName: string;
   entries: number;
   totalHours: number;
+  regularHours: number;
+  onSiteHours: number;
+  travelHours: number;
+  travelKm: number;
   period: string;
 }
 
@@ -108,6 +122,9 @@ export interface InvoiceReport {
   projectNumber: string;
   projectName: string;
   hours: number;
+  isOnSite: boolean;
+  travelHours: number;
+  travelKm: number;
   startTime?: string;
   endTime?: string;
   description: string;
@@ -120,6 +137,9 @@ export interface WeeklyTimesheetReport {
   projectNumber: string;
   project: string;
   hours: number;
+  isOnSite: boolean;
+  travelHours: number;
+  travelKm: number;
   startTime?: string;
   endTime?: string;
   description: string;
@@ -130,6 +150,10 @@ export interface CustomerActivityReport {
   activeProjects: number;
   totalEntries: number;
   totalHours: number;
+  regularHours: number;
+  onSiteHours: number;
+  travelHours: number;
+  travelKm: number;
   firstEntry: string;
   lastEntry: string;
 }
@@ -141,6 +165,10 @@ export interface ProjectStatusReport {
   active: boolean;
   totalEntries: number;
   totalHours: number;
+  regularHours: number;
+  onSiteHours: number;
+  travelHours: number;
+  travelKm: number;
   lastActivity?: string;
   daysSinceLastEntry?: number;
 }
@@ -152,6 +180,10 @@ export interface YearToDateSummary {
   customersServed: number;
   totalEntries: number;
   totalHours: number;
+  regularHours: number;
+  onSiteHours: number;
+  travelHours: number;
+  travelKm: number;
   avgHoursPerEntry: number;
 }
 
@@ -159,6 +191,27 @@ export interface MonthlyComparison {
   yearMonth: string;
   entries: number;
   totalHours: number;
+  regularHours: number;
+  onSiteHours: number;
+  travelHours: number;
+  travelKm: number;
   projectsActive: number;
   customersActive: number;
+}
+
+export interface Settings {
+  id: number;
+  sekToEurRate: number;
+  hourlyRateEur: number;
+  travelHourlyRateEur: number;
+  kmCost: number;
+  createdDate: string;
+  modifiedDate?: string;
+}
+
+export interface UpdateSettingsDto {
+  sekToEurRate: number;
+  hourlyRateEur: number;
+  travelHourlyRateEur: number;
+  kmCost: number;
 }

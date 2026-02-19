@@ -3,9 +3,10 @@ import './index.css';
 import { WeeklyView } from './components/WeeklyView';
 import { ManagementView } from './components/ManagementView';
 import { ReportsView } from './components/ReportsView';
+import { SettingsView } from './components/SettingsView';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'weekly' | 'management' | 'reports'>('weekly');
+  const [activeTab, setActiveTab] = useState<'weekly' | 'management' | 'reports' | 'settings'>('weekly');
 
   return (
     <div>
@@ -30,11 +31,18 @@ function App() {
         >
           Reports
         </button>
+        <button
+          className={`tab ${activeTab === 'settings' ? 'active' : ''}`}
+          onClick={() => setActiveTab('settings')}
+        >
+          Settings
+        </button>
       </div>
 
       {activeTab === 'weekly' && <WeeklyView />}
       {activeTab === 'management' && <ManagementView />}
       {activeTab === 'reports' && <ReportsView />}
+      {activeTab === 'settings' && <SettingsView />}
     </div>
   );
 }
