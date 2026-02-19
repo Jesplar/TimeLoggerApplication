@@ -1,17 +1,35 @@
 # Time Logger Application
 
-A desktop time tracking application built with Electron, React, C# ASP.NET Core, and SQLite.
+A desktop time tracking application built with Electron, React, C# ASP.NET Core, and SQL Server LocalDB.
 
 ## Features
 
 - ⏱️ Log time entries with flexible input (hours or start/end times)
 - 📅 Weekly overview with Monday start, filtering, and summaries
 - 📊 Project totals and weekly hour summations
+- 📈 **NEW: Comprehensive Reports tab with Excel export**
 - 👥 Manage customers and projects (create, edit, archive, delete)
 - 📝 Add descriptions/notes to time entries
 - 📤 Export time entries to CSV
+- 📥 **NEW: Export 8 different management reports to Excel**
 - 💾 Smart defaults remember last-used customer and project
 - 🖥️ Self-contained desktop application
+- 🗄️ SQL Server LocalDB for enterprise-grade data storage
+
+## Reports Available
+
+Generate and export management reports directly from the application:
+
+1. **Monthly Summary by Customer** - Total hours per customer
+2. **Monthly Summary by Project** - Detailed project breakdown for invoicing
+3. **Invoice Preparation** - Custom date range with full details
+4. **Weekly Timesheet** - Monday-Sunday breakdown
+5. **Customer Activity Report** - Engagement analysis
+6. **Project Status Report** - Overview with last activity
+7. **Year-to-Date Summary** - Annual performance metrics
+8. **Month-by-Month Comparison** - 6-month trend analysis
+
+All reports can be exported to Excel with one click!
 
 ## Prerequisites
 
