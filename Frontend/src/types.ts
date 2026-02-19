@@ -83,3 +83,81 @@ export interface UpdateProjectDto {
   name: string;
   isActive: boolean;
 }
+
+// Report Types
+export interface MonthlyCustomerReport {
+  customer: string;
+  totalEntries: number;
+  totalHours: number;
+  period: string;
+}
+
+export interface MonthlyProjectReport {
+  customer: string;
+  projectNumber: string;
+  projectName: string;
+  entries: number;
+  totalHours: number;
+  period: string;
+}
+
+export interface InvoiceReport {
+  date: string;
+  customer: string;
+  projectNumber: string;
+  projectName: string;
+  hours: number;
+  startTime?: string;
+  endTime?: string;
+  description: string;
+}
+
+export interface WeeklyTimesheetReport {
+  date: string;
+  dayOfWeek: string;
+  customer: string;
+  projectNumber: string;
+  project: string;
+  hours: number;
+  startTime?: string;
+  endTime?: string;
+  description: string;
+}
+
+export interface CustomerActivityReport {
+  customer: string;
+  activeProjects: number;
+  totalEntries: number;
+  totalHours: number;
+  firstEntry: string;
+  lastEntry: string;
+}
+
+export interface ProjectStatusReport {
+  customer: string;
+  projectNumber: string;
+  projectName: string;
+  active: boolean;
+  totalEntries: number;
+  totalHours: number;
+  lastActivity?: string;
+  daysSinceLastEntry?: number;
+}
+
+export interface YearToDateSummary {
+  year: number;
+  daysWorked: number;
+  projectsWorked: number;
+  customersServed: number;
+  totalEntries: number;
+  totalHours: number;
+  avgHoursPerEntry: number;
+}
+
+export interface MonthlyComparison {
+  yearMonth: string;
+  entries: number;
+  totalHours: number;
+  projectsActive: number;
+  customersActive: number;
+}

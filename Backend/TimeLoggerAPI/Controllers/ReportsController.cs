@@ -1,0 +1,281 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using TimeLoggerAPI.Data;
+using TimeLoggerAPI.DTOs;
+
+namespace TimeLoggerAPI.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class ReportsController : ControllerBase
+{
+    private readonly TimeLoggerContext _context;
+
+    public ReportsController(TimeLoggerContext context)
+    {
+        _context = context;
+    }
+
+    private static double CalculateHours(decimal? hours, TimeSpan? startTime, TimeSpan? endTime)
+    {
+        if (hours.HasValue)
+            return (double)hours.Value;
+        if (startTime.HasValue && endTime.HasValue)
+            return (endTime.Value - startTime.Value).TotalHours;
+        return 0;
+    }
+
+    // Monthly Summary by Customer
+    [HttpGet("monthly-customer")]
+    public async Task<ActionResult<IEnumerable<MonthlyCustomerReportDto>>> GetMonthlyCustomerReport(
+        [FromQuery] int year, [FromQuery] int month)
+    {
+        var startDate = new DateTime(year, month, 1);
+        var endDate = startDate.AddMonths(1);
+
+        var entries = await _context.TimeEntries
+            .Include(te => te.Project)
+            .ThenInclude(p => p.Customer)
+            .Where(te => te.Date >= startDate && te.Date < endDate)
+            .ToListAsync();
+
+        var report = entries
+            .GroupBy(te => new { te.Project.Customer.Id, te.Project.Customer.Name })
+            .Select(g => new MonthlyCustomerReportDto
+            {
+                Customer = g.Key.Name,
+                TotalEntries = g.Count(),
+                TotalHours = g.Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+                Period = $"{startDate:MMMM yyyy}"
+            })
+            .OrderByDescending(r => r.TotalHours)
+            .ToList();
+
+        return Ok(report);
+    }
+
+    // Monthly Summary by Project
+    [HttpGet("monthly-project")]
+    public async Task<ActionResult<IEnumerable<MonthlyProjectReportDto>>> GetMonthlyProjectReport(
+        [FromQuery] int year, [FromQuery] int month, [FromQuery] int? customerId = null)
+    {
+        var startDate = new DateTime(year, month, 1);
+        var endDate = startDate.AddMonths(1);
+
+        var query = _context.TimeEntries
+            .Include(te => te.Project)
+            .ThenInclude(p => p.Customer)
+            .Where(te => te.Date >= startDate && te.Date < endDate);
+
+        if (customerId.HasValue)
+        {
+            query = query.Where(te => te.Project.CustomerId == customerId.Value);
+        }
+
+        var entries = await query.ToListAsync();
+
+        var report = entries
+            .GroupBy(te => new 
+            { 
+                CustomerName = te.Project.Customer.Name, 
+                te.Project.ProjectNumber, 
+                ProjectName = te.Project.Name,
+                te.ProjectId
+            })
+            .Select(g => new MonthlyProjectReportDto
+            {
+                Customer = g.Key.CustomerName,
+                ProjectNumber = g.Key.ProjectNumber,
+                ProjectName = g.Key.ProjectName,
+                Entries = g.Count(),
+                TotalHours = g.Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+                Period = $"{startDate:MMMM yyyy}"
+            })
+            .OrderBy(r => r.Customer)
+            .ThenBy(r => r.ProjectNumber)
+            .ToList();
+
+        return Ok(report);
+    }
+
+    // Invoice Preparation Report
+    [HttpGet("invoice")]
+    public async Task<ActionResult<IEnumerable<InvoiceReportDto>>> GetInvoiceReport(
+        [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] int? customerId = null)
+    {
+        var query = _context.TimeEntries
+            .Include(te => te.Project)
+            .ThenInclude(p => p.Customer)
+            .Where(te => te.Date >= startDate && te.Date <= endDate);
+
+        if (customerId.HasValue)
+        {
+            query = query.Where(te => te.Project.CustomerId == customerId.Value);
+        }
+
+        var entries = await query
+            .OrderBy(te => te.Project.Customer.Name)
+            .ThenBy(te => te.Project.ProjectNumber)
+            .ThenBy(te => te.Date)
+            .ToListAsync();
+
+        var report = entries.Select(te => new InvoiceReportDto
+        {
+            Date = te.Date,
+            Customer = te.Project.Customer.Name,
+            ProjectNumber = te.Project.ProjectNumber,
+            ProjectName = te.Project.Name,
+            Hours = CalculateHours(te.Hours, te.StartTime, te.EndTime),
+            StartTime = te.StartTime,
+            EndTime = te.EndTime,
+            Description = te.Description ?? string.Empty
+        }).ToList();
+
+        return Ok(report);
+    }
+
+    // Weekly Timesheet Report
+    [HttpGet("weekly-timesheet")]
+    public async Task<ActionResult<IEnumerable<WeeklyTimesheetReportDto>>> GetWeeklyTimesheetReport(
+        [FromQuery] DateTime weekStartDate)
+    {
+        var weekEndDate = weekStartDate.AddDays(6);
+
+        var entries = await _context.TimeEntries
+            .Include(te => te.Project)
+            .ThenInclude(p => p.Customer)
+            .Where(te => te.Date >= weekStartDate && te.Date <= weekEndDate)
+            .OrderBy(te => te.Date)
+            .ThenBy(te => te.Project.Customer.Name)
+            .ThenBy(te => te.Project.ProjectNumber)
+            .ToListAsync();
+
+        var report = entries.Select(te => new WeeklyTimesheetReportDto
+        {
+            Date = te.Date,
+            DayOfWeek = te.Date.DayOfWeek.ToString(),
+            Customer = te.Project.Customer.Name,
+            ProjectNumber = te.Project.ProjectNumber,
+            Project = te.Project.Name,
+            Hours = CalculateHours(te.Hours, te.StartTime, te.EndTime),
+            StartTime = te.StartTime,
+            EndTime = te.EndTime,
+            Description = te.Description ?? string.Empty
+        }).ToList();
+
+        return Ok(report);
+    }
+
+    // Customer Activity Report
+    [HttpGet("customer-activity")]
+    public async Task<ActionResult<IEnumerable<CustomerActivityReportDto>>> GetCustomerActivityReport(
+        [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+    {
+        var entries = await _context.TimeEntries
+            .Include(te => te.Project)
+            .ThenInclude(p => p.Customer)
+            .Where(te => te.Date >= startDate && te.Date <= endDate)
+            .ToListAsync();
+
+        var report = entries
+            .GroupBy(te => new { te.Project.Customer.Id, te.Project.Customer.Name })
+            .Select(g => new CustomerActivityReportDto
+            {
+                Customer = g.Key.Name,
+                ActiveProjects = g.Select(te => te.ProjectId).Distinct().Count(),
+                TotalEntries = g.Count(),
+                TotalHours = g.Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+                FirstEntry = g.Min(te => te.Date),
+                LastEntry = g.Max(te => te.Date)
+            })
+            .OrderByDescending(r => r.TotalHours)
+            .ToList();
+
+        return Ok(report);
+    }
+
+    // Project Status Report
+    [HttpGet("project-status")]
+    public async Task<ActionResult<IEnumerable<ProjectStatusReportDto>>> GetProjectStatusReport()
+    {
+        var projects = await _context.Projects
+            .Include(p => p.Customer)
+            .Include(p => p.TimeEntries)
+            .ToListAsync();
+
+        var report = projects.Select(p => new ProjectStatusReportDto
+        {
+            Customer = p.Customer.Name,
+            ProjectNumber = p.ProjectNumber,
+            ProjectName = p.Name,
+            Active = p.IsActive,
+            TotalEntries = p.TimeEntries.Count,
+            TotalHours = p.TimeEntries.Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+            LastActivity = p.TimeEntries.Any() ? p.TimeEntries.Max(te => te.Date) : (DateTime?)null,
+            DaysSinceLastEntry = p.TimeEntries.Any() 
+                ? (DateTime.Today - p.TimeEntries.Max(te => te.Date)).Days 
+                : (int?)null
+        })
+        .OrderByDescending(r => r.LastActivity)
+        .ToList();
+
+        return Ok(report);
+    }
+
+    // Year-to-Date Summary
+    [HttpGet("ytd-summary")]
+    public async Task<ActionResult<YearToDateSummaryDto>> GetYearToDateSummary([FromQuery] int year)
+    {
+        var startDate = new DateTime(year, 1, 1);
+        var endDate = new DateTime(year, 12, 31);
+
+        var entries = await _context.TimeEntries
+            .Include(te => te.Project)
+            .Where(te => te.Date >= startDate && te.Date <= endDate)
+            .ToListAsync();
+
+        var summary = new YearToDateSummaryDto
+        {
+            Year = year,
+            DaysWorked = entries.Select(te => te.Date.Date).Distinct().Count(),
+            ProjectsWorked = entries.Select(te => te.ProjectId).Distinct().Count(),
+            CustomersServed = entries.Select(te => te.Project.CustomerId).Distinct().Count(),
+            TotalEntries = entries.Count,
+            TotalHours = entries.Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+            AvgHoursPerEntry = entries.Any() 
+                ? entries.Average(te => CalculateHours(te.Hours, te.StartTime, te.EndTime))
+                : 0
+        };
+
+        return Ok(summary);
+    }
+
+    // Month-by-Month Comparison
+    [HttpGet("monthly-comparison")]
+    public async Task<ActionResult<IEnumerable<MonthlyComparisonDto>>> GetMonthlyComparison(
+        [FromQuery] int year, [FromQuery] int monthsBack = 6)
+    {
+        var startDate = DateTime.Today.AddMonths(-monthsBack);
+        var endDate = DateTime.Today;
+
+        var entries = await _context.TimeEntries
+            .Include(te => te.Project)
+            .Where(te => te.Date >= startDate && te.Date <= endDate)
+            .ToListAsync();
+
+        var report = entries
+            .GroupBy(te => new { Year = te.Date.Year, Month = te.Date.Month })
+            .Select(g => new MonthlyComparisonDto
+            {
+                YearMonth = $"{g.Key.Year}-{g.Key.Month:D2}",
+                Entries = g.Count(),
+                TotalHours = g.Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime)),
+                ProjectsActive = g.Select(te => te.ProjectId).Distinct().Count(),
+                CustomersActive = g.Select(te => te.Project.CustomerId).Distinct().Count()
+            })
+            .OrderByDescending(r => r.YearMonth)
+            .ToList();
+
+        return Ok(report);
+    }
+}

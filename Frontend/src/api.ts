@@ -10,6 +10,14 @@ import type {
   UpdateCustomerDto,
   CreateProjectDto,
   UpdateProjectDto,
+  MonthlyCustomerReport,
+  MonthlyProjectReport,
+  InvoiceReport,
+  WeeklyTimesheetReport,
+  CustomerActivityReport,
+  ProjectStatusReport,
+  YearToDateSummary,
+  MonthlyComparison,
 } from './types';
 
 const API_BASE_URL = (window as any).API_URL || 'http://localhost:5000/api';
@@ -112,6 +120,73 @@ export const updateTimeEntry = async (id: number, data: UpdateTimeEntryDto): Pro
 export const deleteTimeEntry = async (id: number): Promise<void> => {
   await api.delete(`/timeentries/${id}`);
 };
+
+// Reports
+export const getMonthlyCustomerReport = async (year: number, month: number): Promise<MonthlyCustomerReport[]> => {
+  const response = await api.get<MonthlyCustomerReport[]>('/reports/monthly-customer', {
+    params: { year, month },
+  });
+  return response.data;
+};
+
+export const getMonthlyProjectReport = async (
+  year: number,
+  month: number,
+  customerId?: number
+): Promise<MonthlyProjectReport[]> => {
+  const response = await api.get<MonthlyProjectReport[]>('/reports/monthly-project', {
+    params: { year, month, customerId },
+  });
+  return response.data;
+};
+
+export const getInvoiceReport = async (
+  startDate: string,
+  endDate: string,
+  customerId?: number
+): Promise<InvoiceReport[]> => {
+  const response = await api.get<InvoiceReport[]>('/reports/invoice', {
+    params: { startDate, endDate, customerId },
+  });
+  return response.data;
+};
+
+export const getWeeklyTimesheetReport = async (weekStartDate: string): Promise<WeeklyTimesheetReport[]> => {
+  const response = await api.get<WeeklyTimesheetReport[]>('/reports/weekly-timesheet', {
+    params: { weekStartDate },
+  });
+  return response.data;
+};
+
+export const getCustomerActivityReport = async (
+  startDate: string,
+  endDate: string
+): Promise<CustomerActivityReport[]> => {
+  const response = await api.get<CustomerActivityReport[]>('/reports/customer-activity', {
+    params: { startDate, endDate },
+  });
+  return response.data;
+};
+
+export const getProjectStatusReport = async (): Promise<ProjectStatusReport[]> => {
+  const response = await api.get<ProjectStatusReport[]>('/reports/project-status');
+  return response.data;
+};
+
+export const getYearToDateSummary = async (year: number): Promise<YearToDateSummary> => {
+  const response = await api.get<YearToDateSummary>('/reports/ytd-summary', {
+    params: { year },
+  });
+  return response.data;
+};
+
+export const getMonthlyComparison = async (year: number, monthsBack: number = 6): Promise<MonthlyComparison[]> => {
+  const response = await api.get<MonthlyComparison[]>('/reports/monthly-comparison', {
+    params: { year, monthsBack },
+  });
+  return response.data;
+};
+
 
 export const exportTimeEntries = async (startDate?: string, endDate?: string): Promise<Blob> => {
   const response = await api.get('/timeentries/export', {
