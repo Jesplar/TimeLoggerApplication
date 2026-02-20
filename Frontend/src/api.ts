@@ -3,6 +3,7 @@ import type {
   Customer,
   Project,
   TimeEntry,
+  TimeCode,
   WeeklySummary,
   CreateTimeEntryDto,
   UpdateTimeEntryDto,
@@ -10,6 +11,8 @@ import type {
   UpdateCustomerDto,
   CreateProjectDto,
   UpdateProjectDto,
+  CreateTimeCodeDto,
+  UpdateTimeCodeDto,
   MonthlyCustomerReport,
   MonthlyProjectReport,
   InvoiceReport,
@@ -210,8 +213,32 @@ export const updateSettings = async (data: UpdateSettingsDto): Promise<Settings>
   return response.data;
 };
 
+// Time Codes
+export const getTimeCodes = async (): Promise<TimeCode[]> => {
+  const response = await api.get<TimeCode[]>('/timecodes');
+  return response.data;
+};
+
+export const getTimeCode = async (id: number): Promise<TimeCode> => {
+  const response = await api.get<TimeCode>(`/timecodes/${id}`);
+  return response.data;
+};
+
+export const createTimeCode = async (data: CreateTimeCodeDto): Promise<TimeCode> => {
+  const response = await api.post<TimeCode>('/timecodes', data);
+  return response.data;
+};
+
+export const updateTimeCode = async (id: number, data: UpdateTimeCodeDto): Promise<void> => {
+  await api.put(`/timecodes/${id}`, data);
+};
+
+export const deleteTimeCode = async (id: number): Promise<void> => {
+  await api.delete(`/timecodes/${id}`);
+};
+
 // Invoice Export
-export const getInvoiceExportData = async (
+export const getInvoiceExportData = async(
   startDate: string,
   endDate: string,
   customerId?: number

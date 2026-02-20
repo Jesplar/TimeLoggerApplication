@@ -8,6 +8,9 @@ public class TimeEntryDto
     public string ProjectNumber { get; set; } = string.Empty;
     public int CustomerId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
+    public int TimeCodeId { get; set; }
+    public int TimeCode { get; set; }
+    public string TimeCodeDescription { get; set; } = string.Empty;
     public DateTime Date { get; set; }
     public decimal? Hours { get; set; }
     public TimeSpan? StartTime { get; set; }
@@ -23,6 +26,7 @@ public class TimeEntryDto
 public class CreateTimeEntryDto
 {
     public int ProjectId { get; set; }
+    public int TimeCodeId { get; set; }
     public DateTime Date { get; set; }
     public decimal? Hours { get; set; }
     public TimeSpan? StartTime { get; set; }
@@ -36,6 +40,7 @@ public class CreateTimeEntryDto
 public class UpdateTimeEntryDto
 {
     public int ProjectId { get; set; }
+    public int TimeCodeId { get; set; }
     public DateTime Date { get; set; }
     public decimal? Hours { get; set; }
     public TimeSpan? StartTime { get; set; }

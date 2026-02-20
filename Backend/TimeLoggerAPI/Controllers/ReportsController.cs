@@ -161,6 +161,7 @@ public class ReportsController : ControllerBase
         var query = _context.TimeEntries
             .Include(te => te.Project)
             .ThenInclude(p => p.Customer)
+            .Include(te => te.TimeCode)
             .Where(te => te.Date >= startDate && te.Date <= endDate);
 
         if (customerId.HasValue)
@@ -185,13 +186,49 @@ public class ReportsController : ControllerBase
             })
             .Select(g =>
             {
-                var regularHours = g.Where(te => !te.IsOnSite).Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime));
-                var onSiteHours = g.Where(te => te.IsOnSite).Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime));
+                // Group regular hours by time code
+                var regularByTimeCode = g
+                    .Where(te => !te.IsOnSite)
+                    .GroupBy(te => new { te.TimeCode.Code, te.TimeCode.Description })
+                    .Select(tcg =>
+                    {
+                        var hours = tcg.Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime));
+                        return new TimeCodeHoursDto
+                        {
+                            TimeCode = tcg.Key.Code,
+                            TimeCodeDescription = tcg.Key.Description,
+                            Hours = hours,
+                            Cost = (decimal)hours * settings.HourlyRateEur
+                        };
+                    })
+                    .OrderBy(tc => tc.TimeCode)
+                    .ToList();
+
+                // Group on-site hours by time code
+                var onSiteByTimeCode = g
+                    .Where(te => te.IsOnSite)
+                    .GroupBy(te => new { te.TimeCode.Code, te.TimeCode.Description })
+                    .Select(tcg =>
+                    {
+                        var hours = tcg.Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime));
+                        return new TimeCodeHoursDto
+                        {
+                            TimeCode = tcg.Key.Code,
+                            TimeCodeDescription = tcg.Key.Description,
+                            Hours = hours,
+                            Cost = (decimal)hours * settings.HourlyRateEur
+                        };
+                    })
+                    .OrderBy(tc => tc.TimeCode)
+                    .ToList();
+
+                var regularHours = regularByTimeCode.Sum(tc => tc.Hours);
+                var onSiteHours = onSiteByTimeCode.Sum(tc => tc.Hours);
                 var travelHours = g.Sum(te => (double)(te.TravelHours ?? 0));
                 var travelKm = g.Sum(te => (double)(te.TravelKm ?? 0));
 
-                var regularCost = (decimal)regularHours * settings.HourlyRateEur;
-                var onSiteCost = (decimal)onSiteHours * settings.HourlyRateEur;
+                var regularCost = regularByTimeCode.Sum(tc => tc.Cost);
+                var onSiteCost = onSiteByTimeCode.Sum(tc => tc.Cost);
                 var travelTimeCost = (decimal)travelHours * settings.TravelHourlyRateEur;
                 var travelDistanceCost = (decimal)travelKm * settings.KmCost;
 
@@ -201,6 +238,9 @@ public class ReportsController : ControllerBase
                     ProjectNumber = g.Key.ProjectNumber,
                     ProjectName = g.Key.ProjectName,
                     Period = $"{startDate:MMMM yyyy}",
+                    
+                    RegularHoursByTimeCode = regularByTimeCode,
+                    OnSiteHoursByTimeCode = onSiteByTimeCode,
                     
                     RegularHours = regularHours,
                     OnSiteHours = onSiteHours,
@@ -223,6 +263,8 @@ public class ReportsController : ControllerBase
                         Customer = te.Project.Customer.Name,
                         ProjectNumber = te.Project.ProjectNumber,
                         ProjectName = te.Project.Name,
+                        TimeCode = te.TimeCode.Code,
+                        TimeCodeDescription = te.TimeCode.Description,
                         Hours = CalculateHours(te.Hours, te.StartTime, te.EndTime),
                         IsOnSite = te.IsOnSite,
                         TravelHours = (double)(te.TravelHours ?? 0),

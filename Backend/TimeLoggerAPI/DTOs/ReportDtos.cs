@@ -32,6 +32,8 @@ public class InvoiceReportDto
     public string Customer { get; set; } = string.Empty;
     public string ProjectNumber { get; set; } = string.Empty;
     public string ProjectName { get; set; } = string.Empty;
+    public int TimeCode { get; set; }
+    public string TimeCodeDescription { get; set; } = string.Empty;
     public double Hours { get; set; }
     public bool IsOnSite { get; set; }
     public double TravelHours { get; set; }
@@ -122,7 +124,11 @@ public class InvoiceExportProjectDto
     public string ProjectName { get; set; } = string.Empty;
     public string Period { get; set; } = string.Empty;
     
-    // Hours breakdown
+    // Hours breakdown by time code
+    public List<TimeCodeHoursDto> RegularHoursByTimeCode { get; set; } = new();
+    public List<TimeCodeHoursDto> OnSiteHoursByTimeCode { get; set; } = new();
+    
+    // Total hours
     public double RegularHours { get; set; }
     public double OnSiteHours { get; set; }
     public double TravelHours { get; set; }
@@ -142,4 +148,12 @@ public class InvoiceExportProjectDto
     
     // Detailed entries for this project
     public List<InvoiceReportDto> Entries { get; set; } = new();
+}
+
+public class TimeCodeHoursDto
+{
+    public int TimeCode { get; set; }
+    public string TimeCodeDescription { get; set; } = string.Empty;
+    public double Hours { get; set; }
+    public decimal Cost { get; set; }
 }

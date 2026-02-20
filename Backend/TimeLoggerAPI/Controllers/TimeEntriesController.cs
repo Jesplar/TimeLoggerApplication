@@ -27,6 +27,7 @@ public class TimeEntriesController : ControllerBase
         var query = _context.TimeEntries
             .Include(t => t.Project)
             .ThenInclude(p => p.Customer)
+            .Include(t => t.TimeCode)
             .AsQueryable();
 
         if (startDate.HasValue)
@@ -61,6 +62,9 @@ public class TimeEntriesController : ControllerBase
                 ProjectNumber = t.Project.ProjectNumber,
                 CustomerId = t.Project.CustomerId,
                 CustomerName = t.Project.Customer.Name,
+                TimeCodeId = t.TimeCodeId,
+                TimeCode = t.TimeCode.Code,
+                TimeCodeDescription = t.TimeCode.Description,
                 Date = t.Date,
                 Hours = t.Hours,
                 StartTime = t.StartTime,
@@ -91,6 +95,7 @@ public class TimeEntriesController : ControllerBase
         var query = _context.TimeEntries
             .Include(t => t.Project)
             .ThenInclude(p => p.Customer)
+            .Include(t => t.TimeCode)
             .Where(t => t.Date >= weekStart && t.Date <= weekEnd);
 
         if (customerId.HasValue)
@@ -142,6 +147,9 @@ public class TimeEntriesController : ControllerBase
                     IsOnSite = e.Entry.IsOnSite,
                     TravelHours = e.Entry.TravelHours,
                     TravelKm = e.Entry.TravelKm,
+                    TimeCodeId = e.Entry.TimeCodeId,
+                    TimeCode = e.Entry.TimeCode.Code,
+                    TimeCodeDescription = e.Entry.TimeCode.Description,
                     CreatedDate = e.Entry.CreatedDate,
                     ModifiedDate = e.Entry.ModifiedDate
                 }).ToList(),
@@ -187,6 +195,7 @@ public class TimeEntriesController : ControllerBase
         var entry = await _context.TimeEntries
             .Include(t => t.Project)
             .ThenInclude(p => p.Customer)
+            .Include(t => t.TimeCode)
             .FirstOrDefaultAsync(t => t.Id == id);
 
         if (entry == null)
@@ -202,6 +211,9 @@ public class TimeEntriesController : ControllerBase
             ProjectNumber = entry.Project.ProjectNumber,
             CustomerId = entry.Project.CustomerId,
             CustomerName = entry.Project.Customer.Name,
+            TimeCodeId = entry.TimeCodeId,
+            TimeCode = entry.TimeCode.Code,
+            TimeCodeDescription = entry.TimeCode.Description,
             Date = entry.Date,
             Hours = CalculateHours(entry),
             StartTime = entry.StartTime,
@@ -232,9 +244,16 @@ public class TimeEntriesController : ControllerBase
             return BadRequest("Project not found.");
         }
 
+        var timeCodeExists = await _context.TimeCodes.AnyAsync(tc => tc.Id == createDto.TimeCodeId);
+        if (!timeCodeExists)
+        {
+            return BadRequest("Time code not found.");
+        }
+
         var entry = new TimeEntry
         {
             ProjectId = createDto.ProjectId,
+            TimeCodeId = createDto.TimeCodeId,
             Date = createDto.Date.Date,
             Hours = createDto.Hours,
             StartTime = createDto.StartTime,
@@ -252,6 +271,8 @@ public class TimeEntriesController : ControllerBase
         var project = await _context.Projects
             .Include(p => p.Customer)
             .FirstAsync(p => p.Id == entry.ProjectId);
+            
+        var timeCode = await _context.TimeCodes.FindAsync(entry.TimeCodeId);
 
         var entryDto = new TimeEntryDto
         {
@@ -261,6 +282,9 @@ public class TimeEntriesController : ControllerBase
             ProjectNumber = project.ProjectNumber,
             CustomerId = project.CustomerId,
             CustomerName = project.Customer.Name,
+            TimeCodeId = entry.TimeCodeId,
+            TimeCode = timeCode!.Code,
+            TimeCodeDescription = timeCode.Description,
             Date = entry.Date,
             Hours = CalculateHours(entry),
             StartTime = entry.StartTime,
@@ -297,8 +321,15 @@ public class TimeEntriesController : ControllerBase
         {
             return BadRequest("Project not found.");
         }
+        
+        var timeCodeExists = await _context.TimeCodes.AnyAsync(tc => tc.Id == updateDto.TimeCodeId);
+        if (!timeCodeExists)
+        {
+            return BadRequest("Time code not found.");
+        }
 
         entry.ProjectId = updateDto.ProjectId;
+        entry.TimeCodeId = updateDto.TimeCodeId;
         entry.Date = updateDto.Date.Date;
         entry.Hours = updateDto.Hours;
         entry.StartTime = updateDto.StartTime;
@@ -338,6 +369,7 @@ public class TimeEntriesController : ControllerBase
         var query = _context.TimeEntries
             .Include(t => t.Project)
             .ThenInclude(p => p.Customer)
+            .Include(t => t.TimeCode)
             .AsQueryable();
 
         if (startDate.HasValue)

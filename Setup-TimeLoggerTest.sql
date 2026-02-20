@@ -47,28 +47,6 @@ CREATE INDEX IX_Projects_CustomerId ON Projects(CustomerId);
 CREATE UNIQUE INDEX IX_Projects_ProjectNumber ON Projects(ProjectNumber);
 GO
 
--- Create TimeEntries table with new travel fields
-CREATE TABLE TimeEntries (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    ProjectId INT NOT NULL,
-    Date DATE NOT NULL,
-    Hours DECIMAL(5,2) NULL,
-    StartTime TIME NULL,
-    EndTime TIME NULL,
-    Description NVARCHAR(500) NULL,
-    IsOnSite BIT NOT NULL DEFAULT 0,
-    TravelHours DECIMAL(5,2) NULL,
-    TravelKm DECIMAL(6,2) NULL,
-    CreatedDate DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
-    ModifiedDate DATETIME2 NULL,
-    CONSTRAINT FK_TimeEntries_Projects FOREIGN KEY (ProjectId) REFERENCES Projects(Id)
-);
-GO
-
-CREATE INDEX IX_TimeEntries_Date ON TimeEntries(Date);
-CREATE INDEX IX_TimeEntries_ProjectId ON TimeEntries(ProjectId);
-GO
-
 -- Create Settings table
 CREATE TABLE Settings (
     Id INT IDENTITY(1,1) PRIMARY KEY,
@@ -84,6 +62,53 @@ GO
 -- Insert default settings
 INSERT INTO Settings (SekToEurRate, HourlyRateEur, TravelHourlyRateEur, KmCost, CreatedDate)
 VALUES (11.36, 152.00, 83.20, 0.80, GETUTCDATE());
+GO
+
+-- Create TimeCodes table
+CREATE TABLE TimeCodes (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Code INT NOT NULL,
+    Description NVARCHAR(200) NOT NULL,
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedDate DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    ModifiedDate DATETIME2 NULL
+);
+GO
+
+CREATE UNIQUE INDEX IX_TimeCodes_Code ON TimeCodes(Code);
+GO
+
+-- Insert default time codes
+INSERT INTO TimeCodes (Code, Description, IsActive, CreatedDate)
+VALUES 
+    (500, 'Project management', 1, GETUTCDATE()),
+    (530, 'StoreWare Software programming', 1, GETUTCDATE()),
+    (540, 'StoreWare visualisation', 1, GETUTCDATE()),
+    (560, 'Simulation', 1, GETUTCDATE());
+GO
+
+-- Create TimeEntries table with new travel fields and time code
+CREATE TABLE TimeEntries (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    ProjectId INT NOT NULL,
+    TimeCodeId INT NOT NULL,
+    Date DATE NOT NULL,
+    Hours DECIMAL(5,2) NULL,
+    StartTime TIME NULL,
+    EndTime TIME NULL,
+    Description NVARCHAR(500) NULL,
+    IsOnSite BIT NOT NULL DEFAULT 0,
+    TravelHours DECIMAL(5,2) NULL,
+    TravelKm DECIMAL(6,2) NULL,
+    CreatedDate DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    ModifiedDate DATETIME2 NULL,
+    CONSTRAINT FK_TimeEntries_Projects FOREIGN KEY (ProjectId) REFERENCES Projects(Id),
+    CONSTRAINT FK_TimeEntries_TimeCodes FOREIGN KEY (TimeCodeId) REFERENCES TimeCodes(Id)
+);
+GO
+
+CREATE INDEX IX_TimeEntries_Date ON TimeEntries(Date);
+CREATE INDEX IX_TimeEntries_ProjectId ON TimeEntries(ProjectId);
 GO
 
 -- Insert sample data for testing
@@ -103,19 +128,19 @@ VALUES
 GO
 
 -- Insert sample time entries with various scenarios
-INSERT INTO TimeEntries (ProjectId, Date, Hours, Description, IsOnSite, TravelHours, TravelKm, CreatedDate)
+INSERT INTO TimeEntries (ProjectId, TimeCodeId, Date, Hours, Description, IsOnSite, TravelHours, TravelKm, CreatedDate)
 VALUES 
-    -- Regular hours, not on site, no travel
-    (1, '2026-02-17', 8.00, 'Regular remote work', 0, NULL, NULL, GETUTCDATE()),
+    -- Regular hours, not on site, no travel - Project management
+    (1, 1, '2026-02-17', 8.00, 'Regular remote work', 0, NULL, NULL, GETUTCDATE()),
     
-    -- On-site work with travel
-    (1, '2026-02-18', 6.00, 'On-site client meeting', 1, 2.00, 150.00, GETUTCDATE()),
+    -- On-site work with travel - StoreWare Software programming
+    (1, 2, '2026-02-18', 6.00, 'On-site client meeting', 1, 2.00, 150.00, GETUTCDATE()),
     
-    -- Regular hours with travel time
-    (2, '2026-02-18', 4.00, 'Remote work with site visit', 0, 1.50, 80.00, GETUTCDATE()),
+    -- Regular hours with travel time - StoreWare visualisation
+    (2, 3, '2026-02-18', 4.00, 'Remote work with site visit', 0, 1.50, 80.00, GETUTCDATE()),
     
-    -- Full on-site day
-    (3, '2026-02-19', 8.00, 'Full day on-site workshop', 1, 3.00, 250.00, GETUTCDATE());
+    -- Full on-site day - Simulation
+    (3, 4, '2026-02-19', 8.00, 'Full day on-site workshop', 1, 3.00, 250.00, GETUTCDATE());
 GO
 
 PRINT 'TimeLoggerTest database created successfully with sample data!';

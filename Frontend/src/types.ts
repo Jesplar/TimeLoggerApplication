@@ -15,6 +15,24 @@ export interface Project {
   createdDate: string;
 }
 
+export interface TimeCode {
+  id: number;
+  code: number;
+  description: string;
+  isActive: boolean;
+}
+
+export interface CreateTimeCodeDto {
+  code: number;
+  description: string;
+}
+
+export interface UpdateTimeCodeDto {
+  code: number;
+  description: string;
+  isActive: boolean;
+}
+
 export interface TimeEntry {
   id: number;
   projectId: number;
@@ -22,6 +40,9 @@ export interface TimeEntry {
   projectNumber: string;
   customerId: number;
   customerName: string;
+  timeCodeId: number;
+  timeCode: number;
+  timeCodeDescription: string;
   date: string;
   hours?: number;
   startTime?: string;
@@ -36,6 +57,7 @@ export interface TimeEntry {
 
 export interface CreateTimeEntryDto {
   projectId: number;
+  timeCodeId: number;
   date: string;
   hours?: number;
   startTime?: string;
@@ -121,6 +143,8 @@ export interface InvoiceReport {
   customer: string;
   projectNumber: string;
   projectName: string;
+  timeCode: number;
+  timeCodeDescription: string;
   hours: number;
   isOnSite: boolean;
   travelHours: number;
@@ -216,11 +240,21 @@ export interface UpdateSettingsDto {
   kmCost: number;
 }
 
+export interface TimeCodeHours {
+  timeCode: number;
+  timeCodeDescription: string;
+  hours: number;
+  cost: number;
+}
+
 export interface InvoiceExportProject {
   customer: string;
   projectNumber: string;
   projectName: string;
   period: string;
+  
+  regularHoursByTimeCode: TimeCodeHours[];
+  onSiteHoursByTimeCode: TimeCodeHours[];
   
   regularHours: number;
   onSiteHours: number;

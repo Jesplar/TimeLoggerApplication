@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Customer, Project, CreateTimeEntryDto, UpdateTimeEntryDto, TimeEntry } from '../types';
-import { getCustomers, getProjects, createTimeEntry, updateTimeEntry } from '../api';
+import { Customer, Project, TimeCode, CreateTimeEntryDto, UpdateTimeEntryDto, TimeEntry } from '../types';
+import { getCustomers, getProjects, getTimeCodes, createTimeEntry, updateTimeEntry } from '../api';
 import { useAppStore } from '../store';
 import { formatDate, todayDate, yesterdayDate, parseTimeString } from '../utils/dateUtils';
 
@@ -19,12 +19,14 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
   editEntry,
   initialDate,
 }) => {
-  const { lastUsedCustomerId, lastUsedProjectId, setLastUsedCustomer, setLastUsedProject } = useAppStore();
+  const { lastUsedCustomerId, lastUsedProjectId, lastUsedTimeCodeId, setLastUsedCustomer, setLastUsedProject, setLastUsedTimeCode } = useAppStore();
   
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [timeCodes, setTimeCodes] = useState<TimeCode[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [selectedTimeCodeId, setSelectedTimeCodeId] = useState<number | null>(null);
   const [date, setDate] = useState(formatDate(initialDate || todayDate()));
   const [entryMode, setEntryMode] = useState<'hours' | 'times'>('hours');
   const [hours, setHours] = useState('');
@@ -40,6 +42,7 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
   useEffect(() => {
     if (isOpen) {
       loadCustomers();
+      loadTimeCodes();
     }
   }, [isOpen]);
 
@@ -47,6 +50,7 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
     if (editEntry) {
       setSelectedCustomerId(editEntry.customerId);
       setSelectedProjectId(editEntry.projectId);
+      setSelectedTimeCodeId(editEntry.timeCodeId);
       setDate(formatDate(editEntry.date));
       setDescription(editEntry.description || '');
       setIsOnSite(editEntry.isOnSite);
@@ -65,6 +69,7 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
       // Reset form for new entry
       setSelectedCustomerId(lastUsedCustomerId);
       setSelectedProjectId(lastUsedProjectId);
+      setSelectedTimeCodeId(null);
       setDate(formatDate(initialDate || todayDate()));
       setEntryMode('hours');
       setHours('');
@@ -120,6 +125,24 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
     }
   };
 
+  const loadTimeCodes = async () => {
+    try {
+      const data = await getTimeCodes();
+      setTimeCodes(data);
+      
+      if (!editEntry && data.length > 0 && !selectedTimeCodeId) {
+        const defaultTimeCode = lastUsedTimeCodeId 
+          ? data.find(tc => tc.id === lastUsedTimeCodeId) 
+          : data[0];
+        if (defaultTimeCode) {
+          setSelectedTimeCodeId(defaultTimeCode.id);
+        }
+      }
+    } catch (err) {
+      setError('Failed to load time codes');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -129,8 +152,14 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
       return;
     }
 
+    if (!selectedTimeCodeId) {
+      setError('Please select a time code');
+      return;
+    }
+
     const dto: CreateTimeEntryDto | UpdateTimeEntryDto = {
       projectId: selectedProjectId,
+      timeCodeId: selectedTimeCodeId,
       date: date,
       description: description.trim() || undefined,
       isOnSite: isOnSite,
@@ -166,6 +195,7 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
         await createTimeEntry(dto);
         setLastUsedCustomer(selectedCustomerId!);
         setLastUsedProject(selectedProjectId);
+        setLastUsedTimeCode(selectedTimeCodeId);
       }
       onSave();
       handleClose();
@@ -226,6 +256,23 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.projectNumber} - {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="timecode">Time Code</label>
+            <select
+              id="timecode"
+              value={selectedTimeCodeId || ''}
+              onChange={(e) => setSelectedTimeCodeId(parseInt(e.target.value))}
+              required
+            >
+              <option value="">Select Time Code</option>
+              {timeCodes.map((tc) => (
+                <option key={tc.id} value={tc.id}>
+                  {tc.code} - {tc.description}
                 </option>
               ))}
             </select>

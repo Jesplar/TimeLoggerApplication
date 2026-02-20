@@ -250,6 +250,9 @@ export const WeeklyView: React.FC = () => {
                         <div style={{ fontSize: '0.9em', color: '#888' }}>
                           {entry.projectName}
                         </div>
+                        <div style={{ fontSize: '0.85em', color: '#666', marginTop: '0.15rem' }}>
+                          {entry.timeCode} - {entry.timeCodeDescription}
+                        </div>
                         {entry.description && (
                           <div style={{ fontSize: '0.85em', marginTop: '0.25rem', fontStyle: 'italic' }}>
                             {entry.description}

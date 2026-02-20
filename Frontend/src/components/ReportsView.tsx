@@ -312,70 +312,74 @@ export function ReportsView() {
       invoiceData.forEach(project => {
         const aoa: any[][] = [];
         
-        // Customer/Project Header
-        aoa.push([project.customer]);
-        aoa.push([`Project: ${project.projectNumber} - ${project.projectName}`]);
-        aoa.push([`Period: ${project.period}`]);
+        // Header
+        aoa.push(['Customer:', project.customer, '', '', '', '']);
+        aoa.push(['Project:', `${project.projectNumber} - ${project.projectName}`, '', '', '', '']);
+        aoa.push(['Period:', project.period, '', '', '', '']);
         aoa.push([]);
         
-        // Cost breakdown header row
-        aoa.push(['', 'Regular Hours', 'On-Site Hours', 'Travel Time', 'Travel Distance']);
+        // Regular Hours Section with Time Code breakdown
+        if (project.regularHours > 0) {
+          aoa.push(['═══ REGULAR HOURS ═══', '', '', '', '', '']);
+          project.regularHoursByTimeCode.forEach(tc => {
+            aoa.push([`${tc.timeCode} - ${tc.timeCodeDescription}:`, `${tc.hours} hours`, 'Rate:', `€${project.hourlyRate}`, 'Total:', `€${tc.cost.toFixed(2)}`]);
+          });
+          aoa.push(['REGULAR SUBTOTAL:', `${project.regularHours} hours`, '', '', 'Total:', `€${project.regularCost.toFixed(2)}`]);
+          aoa.push([]);
+        }
         
-        // Hours/Km row
-        aoa.push([
-          'Hours/Km',
-          project.regularHours,
-          project.onSiteHours,
-          project.travelHours,
-          project.travelKm
-        ]);
+        // On-Site Hours Section with Time Code breakdown
+        if (project.onSiteHours > 0) {
+          aoa.push(['═══ ON-SITE HOURS ═══', '', '', '', '', '']);
+          project.onSiteHoursByTimeCode.forEach(tc => {
+            aoa.push([`${tc.timeCode} - ${tc.timeCodeDescription}:`, `${tc.hours} hours`, 'Rate:', `€${project.hourlyRate}`, 'Total:', `€${tc.cost.toFixed(2)}`]);
+          });
+          aoa.push(['ON-SITE SUBTOTAL:', `${project.onSiteHours} hours`, '', '', 'Total:', `€${project.onSiteCost.toFixed(2)}`]);
+          aoa.push([]);
+        }
         
-        // Rate row
-        aoa.push([
-          'Rate (€)',
-          project.hourlyRate,
-          project.hourlyRate,
-          project.travelHourlyRate,
-          project.kmCost
-        ]);
+        // Travel Section
+        if (project.travelHours > 0 || project.travelKm > 0) {
+          aoa.push(['═══ TRAVEL ═══', '', '', '', '', '']);
+          if (project.travelHours > 0) {
+            aoa.push(['Travel Time:', `${project.travelHours} hours`, 'Rate:', `€${project.travelHourlyRate}/hr`, 'Total:', `€${project.travelTimeCost.toFixed(2)}`]);
+          }
+          if (project.travelKm > 0) {
+            aoa.push(['Travel Distance:', `${project.travelKm} km`, 'Rate:', `€${project.kmCost}/km`, 'Total:', `€${project.travelDistanceCost.toFixed(2)}`]);
+          }
+          aoa.push([]);
+        }
         
-        // Total row with formulas
-        const baseRow = aoa.length + 1;
-        aoa.push([
-          'Total (€)',
-          { f: `B${baseRow-1}*B${baseRow}` },
-          { f: `C${baseRow-1}*C${baseRow}` },
-          { f: `D${baseRow-1}*D${baseRow}` },
-          { f: `E${baseRow-1}*E${baseRow}` }
-        ]);
-        
+        // Total
+        aoa.push(['', '', '', '', 'PROJECT TOTAL:', `€${project.grandTotal.toFixed(2)}`]);
         aoa.push([]);
-        
-        // Detailed entries header
-        aoa.push(['Date', 'Description', 'Hours', 'On-Site', 'Travel Hrs', 'Travel Km']);
+        aoa.push([]);
         
         // Detailed entries
+        aoa.push(['═══ TIME ENTRY DETAILS ═══', '', '', '', '', '', '']);
+        aoa.push(['Date', 'Time Code', 'Description', 'Hours', 'Work Type', 'Travel Time', 'Travel Distance']);
+        
         project.entries.forEach(entry => {
           aoa.push([
-            format(new Date(entry.date), 'yyyy-MM-dd'),
-            entry.description || '',
-            entry.hours,
-            entry.isOnSite ? 'Yes' : 'No',
-            entry.travelHours || 0,
-            entry.travelKm || 0
+            format(new Date(entry.date), 'EEE, MMM dd, yyyy'),
+            `${entry.timeCode} - ${entry.timeCodeDescription}`,
+            entry.description || '(no description)',
+            entry.hours.toFixed(2),
+            entry.isOnSite ? 'On-Site' : 'Regular',
+            entry.travelHours ? `${entry.travelHours.toFixed(2)} hrs` : '-',
+            entry.travelKm ? `${entry.travelKm.toFixed(0)} km` : '-'
           ]);
         });
-        
-        aoa.push([]);
-        aoa.push([`PROJECT TOTAL: €${project.grandTotal.toFixed(2)}`]);
         
         const worksheet = XLSX.utils.aoa_to_sheet(aoa);
         
         // Set column widths
         worksheet['!cols'] = [
           { wch: 20 },
-          { wch: 15 },
-          { wch: 15 },
+          { wch: 25 },
+          { wch: 30 },
+          { wch: 10 },
+          { wch: 12 },
           { wch: 12 },
           { wch: 15 },
         ];
@@ -386,7 +390,7 @@ export function ReportsView() {
       });
       
       const timestamp = format(new Date(), 'yyyy-MM-dd-HHmmss');
-      const filename = `Invoice_Tabbed_${timestamp}.xlsx`;
+      const filename = `Invoice_Detailed_${timestamp}.xlsx`;
       
       XLSX.writeFile(workbook, filename);
     } catch (err: any) {
