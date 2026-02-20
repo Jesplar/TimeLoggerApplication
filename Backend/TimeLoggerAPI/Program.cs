@@ -10,7 +10,7 @@ builder.Services.AddOpenApi();
 
 // Configure SQL Server LocalDB database
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? "Server=(localdb)\\mssqllocaldb;Database=TimeLoggerTest;Trusted_Connection=true;MultipleActiveResultSets=true";
+    ?? "Server=(localdb)\\mssqllocaldb;Database=TimeLogger;Trusted_Connection=true;MultipleActiveResultSets=true";
 
 builder.Services.AddDbContext<TimeLoggerContext>(options =>
     options.UseSqlServer(connectionString));
