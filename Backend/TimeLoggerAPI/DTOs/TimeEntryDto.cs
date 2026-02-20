@@ -18,7 +18,7 @@ public class TimeEntryDto
     public string? Description { get; set; }
     public bool IsOnSite { get; set; }
     public decimal? TravelHours { get; set; }
-    public decimal? TravelKm { get; set; }
+    public int? TravelKm { get; set; }
     public DateTime CreatedDate { get; set; }
     public DateTime? ModifiedDate { get; set; }
 }
@@ -34,7 +34,7 @@ public class CreateTimeEntryDto
     public string? Description { get; set; }
     public bool IsOnSite { get; set; }
     public decimal? TravelHours { get; set; }
-    public decimal? TravelKm { get; set; }
+    public int? TravelKm { get; set; }
 }
 
 public class UpdateTimeEntryDto
@@ -48,7 +48,7 @@ public class UpdateTimeEntryDto
     public string? Description { get; set; }
     public bool IsOnSite { get; set; }
     public decimal? TravelHours { get; set; }
-    public decimal? TravelKm { get; set; }
+    public int? TravelKm { get; set; }
 }
 
 public class WeeklySummaryDto
