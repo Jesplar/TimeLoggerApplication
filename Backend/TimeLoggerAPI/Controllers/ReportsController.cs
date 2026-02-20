@@ -145,6 +145,101 @@ public class ReportsController : ControllerBase
         return Ok(report);
     }
 
+    // Invoice Export with Cost Calculations
+    [HttpGet("invoice-export")]
+    public async Task<ActionResult<IEnumerable<InvoiceExportProjectDto>>> GetInvoiceExport(
+        [FromQuery] DateTime startDate, [FromQuery] DateTime endDate, [FromQuery] int? customerId = null)
+    {
+        // Get settings for rates
+        var settings = await _context.Settings.FirstOrDefaultAsync();
+        if (settings == null)
+        {
+            return BadRequest("Settings not configured. Please configure billing rates in Settings.");
+        }
+
+        // Get time entries
+        var query = _context.TimeEntries
+            .Include(te => te.Project)
+            .ThenInclude(p => p.Customer)
+            .Where(te => te.Date >= startDate && te.Date <= endDate);
+
+        if (customerId.HasValue)
+        {
+            query = query.Where(te => te.Project.CustomerId == customerId.Value);
+        }
+
+        var entries = await query
+            .OrderBy(te => te.Project.Customer.Name)
+            .ThenBy(te => te.Project.ProjectNumber)
+            .ThenBy(te => te.Date)
+            .ToListAsync();
+
+        // Group by project and calculate costs
+        var projectGroups = entries
+            .GroupBy(te => new 
+            { 
+                te.ProjectId,
+                CustomerName = te.Project.Customer.Name,
+                te.Project.ProjectNumber,
+                ProjectName = te.Project.Name
+            })
+            .Select(g =>
+            {
+                var regularHours = g.Where(te => !te.IsOnSite).Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime));
+                var onSiteHours = g.Where(te => te.IsOnSite).Sum(te => CalculateHours(te.Hours, te.StartTime, te.EndTime));
+                var travelHours = g.Sum(te => (double)(te.TravelHours ?? 0));
+                var travelKm = g.Sum(te => (double)(te.TravelKm ?? 0));
+
+                var regularCost = (decimal)regularHours * settings.HourlyRateEur;
+                var onSiteCost = (decimal)onSiteHours * settings.HourlyRateEur;
+                var travelTimeCost = (decimal)travelHours * settings.TravelHourlyRateEur;
+                var travelDistanceCost = (decimal)travelKm * settings.KmCost;
+
+                return new InvoiceExportProjectDto
+                {
+                    Customer = g.Key.CustomerName,
+                    ProjectNumber = g.Key.ProjectNumber,
+                    ProjectName = g.Key.ProjectName,
+                    Period = $"{startDate:MMMM yyyy}",
+                    
+                    RegularHours = regularHours,
+                    OnSiteHours = onSiteHours,
+                    TravelHours = travelHours,
+                    TravelKm = travelKm,
+                    
+                    HourlyRate = settings.HourlyRateEur,
+                    TravelHourlyRate = settings.TravelHourlyRateEur,
+                    KmCost = settings.KmCost,
+                    
+                    RegularCost = regularCost,
+                    OnSiteCost = onSiteCost,
+                    TravelTimeCost = travelTimeCost,
+                    TravelDistanceCost = travelDistanceCost,
+                    GrandTotal = regularCost + onSiteCost + travelTimeCost + travelDistanceCost,
+                    
+                    Entries = g.Select(te => new InvoiceReportDto
+                    {
+                        Date = te.Date,
+                        Customer = te.Project.Customer.Name,
+                        ProjectNumber = te.Project.ProjectNumber,
+                        ProjectName = te.Project.Name,
+                        Hours = CalculateHours(te.Hours, te.StartTime, te.EndTime),
+                        IsOnSite = te.IsOnSite,
+                        TravelHours = (double)(te.TravelHours ?? 0),
+                        TravelKm = (double)(te.TravelKm ?? 0),
+                        StartTime = te.StartTime,
+                        EndTime = te.EndTime,
+                        Description = te.Description ?? string.Empty
+                    }).ToList()
+                };
+            })
+            .OrderBy(p => p.Customer)
+            .ThenBy(p => p.ProjectNumber)
+            .ToList();
+
+        return Ok(projectGroups);
+    }
+
     // Weekly Timesheet Report
     [HttpGet("weekly-timesheet")]
     public async Task<ActionResult<IEnumerable<WeeklyTimesheetReportDto>>> GetWeeklyTimesheetReport(

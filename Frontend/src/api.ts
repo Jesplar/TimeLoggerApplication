@@ -20,6 +20,7 @@ import type {
   MonthlyComparison,
   Settings,
   UpdateSettingsDto,
+  InvoiceExportProject,
 } from './types';
 
 const API_BASE_URL = (window as any).API_URL || 'http://localhost:5000/api';
@@ -208,3 +209,16 @@ export const updateSettings = async (data: UpdateSettingsDto): Promise<Settings>
   const response = await api.put<Settings>('/settings', data);
   return response.data;
 };
+
+// Invoice Export
+export const getInvoiceExportData = async (
+  startDate: string,
+  endDate: string,
+  customerId?: number
+): Promise<InvoiceExportProject[]> => {
+  const response = await api.get<InvoiceExportProject[]>('/reports/invoice-export', {
+    params: { startDate, endDate, customerId },
+  });
+  return response.data;
+};
+

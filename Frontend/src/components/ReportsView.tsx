@@ -11,9 +11,10 @@ import {
   getYearToDateSummary,
   getMonthlyComparison,
   getCustomers,
+  getInvoiceExportData,
 } from '../api';
 import { getWeekStart } from '../utils/dateUtils';
-import type { Customer } from '../types';
+import type { Customer, InvoiceExportProject } from '../types';
 
 type ReportType =
   | 'monthly-customer'
@@ -184,6 +185,215 @@ export function ReportsView() {
     const filename = `${reportOption.label.replace(/\s+/g, '_')}_${timestamp}.xlsx`;
 
     XLSX.writeFile(workbook, filename);
+  };
+
+  const exportInvoiceToExcelSingleSheet = async () => {
+    if (selectedReport !== 'invoice') return;
+    
+    setLoading(true);
+    try {
+      const invoiceData: InvoiceExportProject[] = await getInvoiceExportData(startDate, endDate, selectedCustomerId);
+      
+      if (invoiceData.length === 0) {
+        setError('No data to export');
+        return;
+      }
+
+      const aoa: any[][] = [];
+      
+      for (let i = 0; i < invoiceData.length; i++) {
+        const project = invoiceData[i];
+        
+        // Customer/Project Header (merged across columns)
+        aoa.push([project.customer]);
+        aoa.push([`Project: ${project.projectNumber} - ${project.projectName}`]);
+        aoa.push([`Period: ${project.period}`]);
+        aoa.push([]);
+        
+        // Cost breakdown header row
+        aoa.push(['', 'Regular Hours', 'On-Site Hours', 'Travel Time', 'Travel Distance']);
+        
+        // Hours/Km row
+        aoa.push([
+          'Hours/Km',
+          project.regularHours,
+          project.onSiteHours,
+          project.travelHours,
+          project.travelKm
+        ]);
+        
+        // Rate row
+        aoa.push([
+          'Rate (€)',
+          project.hourlyRate,
+          project.hourlyRate,
+          project.travelHourlyRate,
+          project.kmCost
+        ]);
+        
+        // Total row with formulas
+        const baseRow = aoa.length + 1; // Excel is 1-indexed
+        aoa.push([
+          'Total (€)',
+          { f: `B${baseRow-1}*B${baseRow}` },
+          { f: `C${baseRow-1}*C${baseRow}` },
+          { f: `D${baseRow-1}*D${baseRow}` },
+          { f: `E${baseRow-1}*E${baseRow}` }
+        ]);
+        
+        aoa.push([]);
+        
+        // Detailed entries header
+        aoa.push(['Date', 'Description', 'Hours', 'On-Site', 'Travel Hrs', 'Travel Km']);
+        
+        // Detailed entries
+        project.entries.forEach(entry => {
+          aoa.push([
+            format(new Date(entry.date), 'yyyy-MM-dd'),
+            entry.description || '',
+            entry.hours,
+            entry.isOnSite ? 'Yes' : 'No',
+            entry.travelHours || 0,
+            entry.travelKm || 0
+          ]);
+        });
+        
+        aoa.push([]);
+        
+        // Project total
+        aoa.push([`PROJECT TOTAL: €${project.grandTotal.toFixed(2)}`]);
+        
+        // Separator between projects
+        if (i < invoiceData.length - 1) {
+          aoa.push([]);
+          aoa.push([]);
+        }
+      }
+      
+      const worksheet = XLSX.utils.aoa_to_sheet(aoa);
+      
+      // Set column widths
+      worksheet['!cols'] = [
+        { wch: 20 }, // Date/Label column
+        { wch: 15 }, // Regular Hours/Description
+        { wch: 15 }, // On-Site Hours
+        { wch: 12 }, // Travel Time
+        { wch: 15 }, // Travel Distance
+      ];
+      
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Invoice');
+      
+      const timestamp = format(new Date(), 'yyyy-MM-dd-HHmmss');
+      const filename = `Invoice_${timestamp}.xlsx`;
+      
+      XLSX.writeFile(workbook, filename);
+    } catch (err: any) {
+      setError(err.message || 'Failed to export invoice');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const exportInvoiceToExcelTabbed = async () => {
+    if (selectedReport !== 'invoice') return;
+    
+    setLoading(true);
+    try {
+      const invoiceData: InvoiceExportProject[] = await getInvoiceExportData(startDate, endDate, selectedCustomerId);
+      
+      if (invoiceData.length === 0) {
+        setError('No data to export');
+        return;
+      }
+
+      const workbook = XLSX.utils.book_new();
+      
+      invoiceData.forEach(project => {
+        const aoa: any[][] = [];
+        
+        // Customer/Project Header
+        aoa.push([project.customer]);
+        aoa.push([`Project: ${project.projectNumber} - ${project.projectName}`]);
+        aoa.push([`Period: ${project.period}`]);
+        aoa.push([]);
+        
+        // Cost breakdown header row
+        aoa.push(['', 'Regular Hours', 'On-Site Hours', 'Travel Time', 'Travel Distance']);
+        
+        // Hours/Km row
+        aoa.push([
+          'Hours/Km',
+          project.regularHours,
+          project.onSiteHours,
+          project.travelHours,
+          project.travelKm
+        ]);
+        
+        // Rate row
+        aoa.push([
+          'Rate (€)',
+          project.hourlyRate,
+          project.hourlyRate,
+          project.travelHourlyRate,
+          project.kmCost
+        ]);
+        
+        // Total row with formulas
+        const baseRow = aoa.length + 1;
+        aoa.push([
+          'Total (€)',
+          { f: `B${baseRow-1}*B${baseRow}` },
+          { f: `C${baseRow-1}*C${baseRow}` },
+          { f: `D${baseRow-1}*D${baseRow}` },
+          { f: `E${baseRow-1}*E${baseRow}` }
+        ]);
+        
+        aoa.push([]);
+        
+        // Detailed entries header
+        aoa.push(['Date', 'Description', 'Hours', 'On-Site', 'Travel Hrs', 'Travel Km']);
+        
+        // Detailed entries
+        project.entries.forEach(entry => {
+          aoa.push([
+            format(new Date(entry.date), 'yyyy-MM-dd'),
+            entry.description || '',
+            entry.hours,
+            entry.isOnSite ? 'Yes' : 'No',
+            entry.travelHours || 0,
+            entry.travelKm || 0
+          ]);
+        });
+        
+        aoa.push([]);
+        aoa.push([`PROJECT TOTAL: €${project.grandTotal.toFixed(2)}`]);
+        
+        const worksheet = XLSX.utils.aoa_to_sheet(aoa);
+        
+        // Set column widths
+        worksheet['!cols'] = [
+          { wch: 20 },
+          { wch: 15 },
+          { wch: 15 },
+          { wch: 12 },
+          { wch: 15 },
+        ];
+        
+        // Create sheet name (max 31 chars for Excel)
+        const sheetName = `${project.customer}-${project.projectNumber}`.substring(0, 31);
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+      });
+      
+      const timestamp = format(new Date(), 'yyyy-MM-dd-HHmmss');
+      const filename = `Invoice_Tabbed_${timestamp}.xlsx`;
+      
+      XLSX.writeFile(workbook, filename);
+    } catch (err: any) {
+      setError(err.message || 'Failed to export invoice');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderReportTable = () => {
@@ -372,7 +582,17 @@ export function ReportsView() {
           <button onClick={generateReport} disabled={loading} className="btn-primary">
             {loading ? 'Generating...' : 'Generate Report'}
           </button>
-          {reportData && (
+          {reportData && selectedReport === 'invoice' && (
+            <>
+              <button onClick={exportInvoiceToExcelSingleSheet} disabled={loading} className="btn-secondary">
+                📥 Export Invoice (Single Sheet)
+              </button>
+              <button onClick={exportInvoiceToExcelTabbed} disabled={loading} className="btn-secondary">
+                📑 Export Invoice (Tabbed)
+              </button>
+            </>
+          )}
+          {reportData && selectedReport !== 'invoice' && (
             <button onClick={exportToExcel} className="btn-secondary">
               📥 Export to Excel
             </button>

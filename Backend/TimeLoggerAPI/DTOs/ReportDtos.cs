@@ -114,3 +114,32 @@ public class MonthlyComparisonDto
     public int ProjectsActive { get; set; }
     public int CustomersActive { get; set; }
 }
+
+public class InvoiceExportProjectDto
+{
+    public string Customer { get; set; } = string.Empty;
+    public string ProjectNumber { get; set; } = string.Empty;
+    public string ProjectName { get; set; } = string.Empty;
+    public string Period { get; set; } = string.Empty;
+    
+    // Hours breakdown
+    public double RegularHours { get; set; }
+    public double OnSiteHours { get; set; }
+    public double TravelHours { get; set; }
+    public double TravelKm { get; set; }
+    
+    // Rates from settings
+    public decimal HourlyRate { get; set; }
+    public decimal TravelHourlyRate { get; set; }
+    public decimal KmCost { get; set; }
+    
+    // Calculated costs
+    public decimal RegularCost { get; set; }
+    public decimal OnSiteCost { get; set; }
+    public decimal TravelTimeCost { get; set; }
+    public decimal TravelDistanceCost { get; set; }
+    public decimal GrandTotal { get; set; }
+    
+    // Detailed entries for this project
+    public List<InvoiceReportDto> Entries { get; set; } = new();
+}

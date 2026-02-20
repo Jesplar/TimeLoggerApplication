@@ -215,3 +215,28 @@ export interface UpdateSettingsDto {
   travelHourlyRateEur: number;
   kmCost: number;
 }
+
+export interface InvoiceExportProject {
+  customer: string;
+  projectNumber: string;
+  projectName: string;
+  period: string;
+  
+  regularHours: number;
+  onSiteHours: number;
+  travelHours: number;
+  travelKm: number;
+  
+  hourlyRate: number;
+  travelHourlyRate: number;
+  kmCost: number;
+  
+  regularCost: number;
+  onSiteCost: number;
+  travelTimeCost: number;
+  travelDistanceCost: number;
+  grandTotal: number;
+  
+  entries: InvoiceReport[];
+}
+
