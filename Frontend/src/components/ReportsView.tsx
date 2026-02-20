@@ -250,18 +250,31 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
       }
 
       const aoa: any[][] = [];
+      const boldRows: number[] = []; // Track rows that should be bold
+      let currentRow = 0;
       
       for (let i = 0; i < invoiceData.length; i++) {
         const project = invoiceData[i];
         
-        // Customer/Project Header (merged across columns)
+        // Customer/Project Header (merged across columns) - BOLD
         aoa.push([project.customer]);
-        aoa.push([`Project: ${project.projectNumber} - ${project.projectName}`]);
-        aoa.push([`Period: ${project.period}`]);
-        aoa.push([]);
+        boldRows.push(currentRow);
+        currentRow++;
         
-        // Cost breakdown header row
+        aoa.push([`Project: ${project.projectNumber} - ${project.projectName}`]);
+        boldRows.push(currentRow);
+        currentRow++;
+        
+        aoa.push([`Period: ${project.period}`]);
+        currentRow++;
+        
+        aoa.push([]);
+        currentRow++;
+        
+        // Cost breakdown header row - BOLD
         aoa.push(['', 'Regular Hours', 'On-Site Hours', 'Travel Time', 'Travel Distance']);
+        boldRows.push(currentRow);
+        currentRow++;
         
         // Hours/Km row
         aoa.push([
@@ -271,6 +284,7 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
           project.travelHours,
           project.travelKm
         ]);
+        currentRow++;
         
         // Rate row
         aoa.push([
@@ -280,9 +294,10 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
           project.travelHourlyRate,
           project.kmCost
         ]);
+        currentRow++;
         
-        // Total row with formulas
-        const baseRow = aoa.length + 1; // Excel is 1-indexed
+        // Total row with formulas - BOLD
+        const baseRow = currentRow + 1; // Excel is 1-indexed
         aoa.push([
           'Total (€)',
           { f: `B${baseRow-1}*B${baseRow}` },
@@ -290,11 +305,16 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
           { f: `D${baseRow-1}*D${baseRow}` },
           { f: `E${baseRow-1}*E${baseRow}` }
         ]);
+        boldRows.push(currentRow);
+        currentRow++;
         
         aoa.push([]);
+        currentRow++;
         
-        // Detailed entries header
+        // Detailed entries header - BOLD
         aoa.push(['Date', 'Description', 'Hours', 'On-Site', 'Travel Hrs', 'Travel Km']);
+        boldRows.push(currentRow);
+        currentRow++;
         
         // Detailed entries
         project.entries.forEach(entry => {
@@ -306,21 +326,39 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
             entry.travelHours || 0,
             entry.travelKm || 0
           ]);
+          currentRow++;
         });
         
         aoa.push([]);
+        currentRow++;
         
-        // Project total
+        // Project total - BOLD
         aoa.push([`PROJECT TOTAL: €${project.grandTotal.toFixed(2)}`]);
+        boldRows.push(currentRow);
+        currentRow++;
         
         // Separator between projects
         if (i < invoiceData.length - 1) {
           aoa.push([]);
+          currentRow++;
           aoa.push([]);
+          currentRow++;
         }
       }
       
       const worksheet = XLSX.utils.aoa_to_sheet(aoa);
+      
+      // Apply bold styling to specified rows
+      boldRows.forEach(rowIdx => {
+        const cellRange = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+        for (let col = cellRange.s.c; col <= cellRange.e.c; col++) {
+          const cellAddress = XLSX.utils.encode_cell({ r: rowIdx, c: col });
+          if (worksheet[cellAddress]) {
+            if (!worksheet[cellAddress].s) worksheet[cellAddress].s = {};
+            worksheet[cellAddress].s = { font: { bold: true } };
+          }
+        }
+      });
       
       // Set column widths
       worksheet['!cols'] = [
@@ -361,48 +399,86 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
       
       invoiceData.forEach(project => {
         const aoa: any[][] = [];
+        const boldRows: number[] = []; // Track rows that should be bold
+        let currentRow = 0;
         
-        // Header
+        // Header - BOLD
         aoa.push(['Customer:', project.customer, '', '', '', '']);
+        boldRows.push(currentRow);
+        currentRow++;
+        
         aoa.push(['Project:', `${project.projectNumber} - ${project.projectName}`, '', '', '', '']);
+        boldRows.push(currentRow);
+        currentRow++;
+        
         aoa.push(['Period:', project.period, '', '', '', '']);
+        currentRow++;
+        
         aoa.push([]);
+        currentRow++;
         
         // Regular Hours Section with Time Code breakdown
         if (project.regularHours > 0) {
           aoa.push(['═══ REGULAR HOURS ═══', '', '', '', '', '']);
+          boldRows.push(currentRow); // Section header bold
+          currentRow++;
+          
           project.regularHoursByTimeCode.forEach(tc => {
             aoa.push([`${tc.timeCode} - ${tc.timeCodeDescription}:`, `${tc.hours} hours`, 'Rate:', `€${project.hourlyRate}`, 'Total:', `€${tc.cost.toFixed(2)}`]);
+            currentRow++;
           });
+          
           aoa.push(['REGULAR SUBTOTAL:', `${project.regularHours} hours`, '', '', 'Total:', `€${project.regularCost.toFixed(2)}`]);
+          boldRows.push(currentRow); // Subtotal bold
+          currentRow++;
+          
           aoa.push([]);
+          currentRow++;
         }
         
         // On-Site Hours Section with Time Code breakdown
         if (project.onSiteHours > 0) {
           aoa.push(['═══ ON-SITE HOURS ═══', '', '', '', '', '']);
+          boldRows.push(currentRow); // Section header bold
+          currentRow++;
+          
           project.onSiteHoursByTimeCode.forEach(tc => {
             aoa.push([`${tc.timeCode} - ${tc.timeCodeDescription}:`, `${tc.hours} hours`, 'Rate:', `€${project.hourlyRate}`, 'Total:', `€${tc.cost.toFixed(2)}`]);
+            currentRow++;
           });
+          
           aoa.push(['ON-SITE SUBTOTAL:', `${project.onSiteHours} hours`, '', '', 'Total:', `€${project.onSiteCost.toFixed(2)}`]);
+          boldRows.push(currentRow); // Subtotal bold
+          currentRow++;
+          
           aoa.push([]);
+          currentRow++;
         }
         
         // Travel Section
         if (project.travelHours > 0 || project.travelKm > 0) {
           aoa.push(['═══ TRAVEL ═══', '', '', '', '', '']);
+          boldRows.push(currentRow); // Section header bold
+          currentRow++;
+          
           if (project.travelHours > 0) {
             aoa.push(['Travel Time:', `${project.travelHours} hours`, 'Rate:', `€${project.travelHourlyRate}/hr`, 'Total:', `€${project.travelTimeCost.toFixed(2)}`]);
+            currentRow++;
           }
           if (project.travelKm > 0) {
             aoa.push(['Travel Distance:', `${project.travelKm} km`, 'Rate:', `€${project.kmCost}/km`, 'Total:', `€${project.travelDistanceCost.toFixed(2)}`]);
+            currentRow++;
           }
           aoa.push([]);
+          currentRow++;
         }
         
         // Receipts Section
         if (project.receipts && project.receipts.length > 0) {
           aoa.push(['═══ RECEIPTS ═══', '', '', '', '', '']);
+          boldRows.push(currentRow); // Section header bold
+          currentRow++;
+          
           project.receipts.forEach(receipt => {
             const costDisplay = receipt.currency === 'EUR' 
               ? `€${receipt.cost.toFixed(2)}`
@@ -415,19 +491,35 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
               'Total:',
               `€${receipt.costInEur.toFixed(2)}`
             ]);
+            currentRow++;
           });
+          
           aoa.push(['RECEIPTS SUBTOTAL:', '', '', '', 'Total:', `€${project.receiptsCost.toFixed(2)}`]);
+          boldRows.push(currentRow); // Subtotal bold
+          currentRow++;
+          
           aoa.push([]);
+          currentRow++;
         }
         
-        // Total
+        // Total - BOLD
         aoa.push(['', '', '', '', 'PROJECT TOTAL:', `€${project.grandTotal.toFixed(2)}`]);
+        boldRows.push(currentRow);
+        currentRow++;
+        
         aoa.push([]);
+        currentRow++;
         aoa.push([]);
+        currentRow++;
         
         // Detailed entries
         aoa.push(['═══ TIME ENTRY DETAILS ═══', '', '', '', '', '', '']);
+        boldRows.push(currentRow); // Section header bold
+        currentRow++;
+        
         aoa.push(['Date', 'Time Code', 'Description', 'Hours', 'Work Type', 'Travel Time', 'Travel Distance']);
+        boldRows.push(currentRow); // Table header bold
+        currentRow++;
         
         project.entries.forEach(entry => {
           aoa.push([
@@ -439,9 +531,22 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
             entry.travelHours ? `${entry.travelHours.toFixed(2)} hrs` : '-',
             entry.travelKm ? `${entry.travelKm.toFixed(0)} km` : '-'
           ]);
+          currentRow++;
         });
         
         const worksheet = XLSX.utils.aoa_to_sheet(aoa);
+        
+        // Apply bold styling to specified rows
+        boldRows.forEach(rowIdx => {
+          const cellRange = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+          for (let col = cellRange.s.c; col <= cellRange.e.c; col++) {
+            const cellAddress = XLSX.utils.encode_cell({ r: rowIdx, c: col });
+            if (worksheet[cellAddress]) {
+              if (!worksheet[cellAddress].s) worksheet[cellAddress].s = {};
+              worksheet[cellAddress].s = { font: { bold: true } };
+            }
+          }
+        });
         
         // Set column widths
         worksheet['!cols'] = [
