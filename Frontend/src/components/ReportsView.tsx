@@ -91,7 +91,7 @@ const reportOptions: ReportOption[] = [
   },
 ];
 
-export function ReportsView() {
+export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }) {
   const [selectedReport, setSelectedReport] = useState<ReportType>('monthly-customer');
   const [reportData, setReportData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -109,7 +109,6 @@ export function ReportsView() {
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | undefined>(undefined);
 
   // Receipts management
-  const [showReceipts, setShowReceipts] = useState(false);
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false);
   const [editingReceipt, setEditingReceipt] = useState<Receipt | null>(null);
@@ -118,10 +117,10 @@ export function ReportsView() {
 
   useEffect(() => {
     loadCustomers();
-    if (showReceipts) {
+    if (receiptsOnly) {
       loadReceipts();
     }
-  }, [showReceipts]);
+  }, [receiptsOnly]);
 
   const loadCustomers = async () => {
     try {
@@ -543,19 +542,91 @@ export function ReportsView() {
   return (
     <div className="reports-view">
       <div className="reports-header">
-        <h2>📊 Management Reports</h2>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <button 
-            onClick={() => setShowReceipts(!showReceipts)} 
-            className="secondary"
-            style={{ fontSize: '0.9rem' }}
-          >
-            {showReceipts ? '📊 Show Reports' : '🧾 Manage Receipts'}
-          </button>
-        </div>
+        <h2>{receiptsOnly ? '🧾 Receipt Management' : '📊 Management Reports'}</h2>
       </div>
 
-      {!showReceipts ? (
+      {receiptsOnly ? (
+        <div className="receipts-management">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h3>Receipt Management</h3>
+            <button onClick={handleAddReceipt} className="primary">
+              + Add Receipt
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label>Start Date</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+              />
+            </div>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label>End Date</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+              <button onClick={loadReceipts} className="secondary">
+                Load Receipts
+              </button>
+            </div>
+          </div>
+
+          {loading ? (
+            <p>Loading receipts...</p>
+          ) : receipts.length === 0 ? (
+            <p>No receipts found for the selected period.</p>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Project</th>
+                  <th>Customer</th>
+                  <th>File Name</th>
+                  <th>Cost</th>
+                  <th>Currency</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {receipts.map(receipt => (
+                  <tr key={receipt.id}>
+                    <td>{format(new Date(receipt.date), 'MMM dd, yyyy')}</td>
+                    <td>{receipt.projectNumber} - {receipt.projectName}</td>
+                    <td>{receipt.customerName}</td>
+                    <td>{receipt.fileName}</td>
+                    <td>{receipt.cost.toFixed(2)}</td>
+                    <td>{receipt.currency}</td>
+                    <td>
+                      <button 
+                        onClick={() => handleEditReceipt(receipt)} 
+                        className="secondary"
+                        style={{ marginRight: '0.5rem', fontSize: '0.85rem', padding: '0.3rem 0.6rem' }}
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteReceipt(receipt.id)} 
+                        className="danger"
+                        style={{ fontSize: '0.85rem', padding: '0.3rem 0.6rem' }}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      ) : (
         <>
           <div className="report-controls">
         <div className="control-group">
@@ -699,87 +770,6 @@ export function ReportsView() {
         </div>
       )}
         </>
-      ) : (
-        <div className="receipts-management">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3>Receipt Management</h3>
-            <button onClick={handleAddReceipt} className="primary">
-              + Add Receipt
-            </button>
-          </div>
-
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label>Start Date</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={e => setStartDate(e.target.value)}
-              />
-            </div>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label>End Date</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={e => setEndDate(e.target.value)}
-              />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-              <button onClick={loadReceipts} className="secondary">
-                Load Receipts
-              </button>
-            </div>
-          </div>
-
-          {loading ? (
-            <p>Loading receipts...</p>
-          ) : receipts.length === 0 ? (
-            <p>No receipts found for the selected period.</p>
-          ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Project</th>
-                  <th>Customer</th>
-                  <th>File Name</th>
-                  <th>Cost</th>
-                  <th>Currency</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {receipts.map(receipt => (
-                  <tr key={receipt.id}>
-                    <td>{format(new Date(receipt.date), 'MMM dd, yyyy')}</td>
-                    <td>{receipt.projectNumber} - {receipt.projectName}</td>
-                    <td>{receipt.customerName}</td>
-                    <td>{receipt.fileName}</td>
-                    <td>{receipt.cost.toFixed(2)}</td>
-                    <td>{receipt.currency}</td>
-                    <td>
-                      <button 
-                        onClick={() => handleEditReceipt(receipt)} 
-                        className="secondary"
-                        style={{ marginRight: '0.5rem', fontSize: '0.85rem', padding: '0.3rem 0.6rem' }}
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteReceipt(receipt.id)} 
-                        className="danger"
-                        style={{ fontSize: '0.85rem', padding: '0.3rem 0.6rem' }}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
       )}
 
       <ReceiptDialog

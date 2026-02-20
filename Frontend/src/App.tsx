@@ -6,7 +6,7 @@ import { ReportsView } from './components/ReportsView';
 import { SettingsView } from './components/SettingsView';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'weekly' | 'management' | 'reports' | 'settings'>('weekly');
+  const [activeTab, setActiveTab] = useState<'weekly' | 'management' | 'reports' | 'receipts' | 'settings'>('weekly');
 
   return (
     <div>
@@ -23,13 +23,19 @@ function App() {
           className={`tab ${activeTab === 'management' ? 'active' : ''}`}
           onClick={() => setActiveTab('management')}
         >
-          Manage
+          Manage Projects
         </button>
         <button
           className={`tab ${activeTab === 'reports' ? 'active' : ''}`}
           onClick={() => setActiveTab('reports')}
         >
           Reports
+        </button>
+        <button
+          className={`tab ${activeTab === 'receipts' ? 'active' : ''}`}
+          onClick={() => setActiveTab('receipts')}
+        >
+          Receipts
         </button>
         <button
           className={`tab ${activeTab === 'settings' ? 'active' : ''}`}
@@ -42,6 +48,7 @@ function App() {
       {activeTab === 'weekly' && <WeeklyView />}
       {activeTab === 'management' && <ManagementView />}
       {activeTab === 'reports' && <ReportsView />}
+      {activeTab === 'receipts' && <ReportsView receiptsOnly={true} />}
       {activeTab === 'settings' && <SettingsView />}
     </div>
   );
