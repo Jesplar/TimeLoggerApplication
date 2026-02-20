@@ -14,6 +14,8 @@ public class TimeLoggerContext : DbContext
     public DbSet<TimeEntry> TimeEntries { get; set; } = null!;
     public DbSet<Settings> Settings { get; set; } = null!;
     public DbSet<TimeCode> TimeCodes { get; set; } = null!;
+    public DbSet<Receipt> Receipts { get; set; } = null!;
+    public DbSet<ReceiptType> ReceiptTypes { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -105,6 +107,49 @@ public class TimeLoggerContext : DbContext
                 KmCost = 0.80m,
                 CreatedDate = DateTime.UtcNow
             });
+        });
+
+        // Receipt configuration
+        modelBuilder.Entity<Receipt>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FileName).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.Cost).HasPrecision(10, 2);
+            entity.Property(e => e.Currency).IsRequired().HasMaxLength(3);
+            
+            // Indexes for query performance
+            entity.HasIndex(e => e.Date);
+            entity.HasIndex(e => e.ProjectId);
+            
+            // Foreign key relationship to Project
+            entity.HasOne(e => e.Project)
+                .WithMany()
+                .HasForeignKey(e => e.ProjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+            
+            // Foreign key relationship to ReceiptType
+            entity.HasOne(e => e.ReceiptType)
+                .WithMany()
+                .HasForeignKey(e => e.ReceiptTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // ReceiptType configuration
+        modelBuilder.Entity<ReceiptType>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.HasIndex(e => e.Name).IsUnique();
+            
+            // Seed initial receipt types
+            entity.HasData(
+                new ReceiptType { Id = 1, Name = "Fuel", IsActive = true, CreatedDate = DateTime.UtcNow },
+                new ReceiptType { Id = 2, Name = "Hotel", IsActive = true, CreatedDate = DateTime.UtcNow },
+                new ReceiptType { Id = 3, Name = "PlaneTicket", IsActive = true, CreatedDate = DateTime.UtcNow },
+                new ReceiptType { Id = 4, Name = "Representation", IsActive = true, CreatedDate = DateTime.UtcNow },
+                new ReceiptType { Id = 5, Name = "AirBnB", IsActive = true, CreatedDate = DateTime.UtcNow },
+                new ReceiptType { Id = 6, Name = "RentalCar", IsActive = true, CreatedDate = DateTime.UtcNow }
+            );
         });
     }
 }

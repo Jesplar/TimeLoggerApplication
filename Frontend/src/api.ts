@@ -4,6 +4,8 @@ import type {
   Project,
   TimeEntry,
   TimeCode,
+  Receipt,
+  ReceiptType,
   WeeklySummary,
   CreateTimeEntryDto,
   UpdateTimeEntryDto,
@@ -13,6 +15,10 @@ import type {
   UpdateProjectDto,
   CreateTimeCodeDto,
   UpdateTimeCodeDto,
+  CreateReceiptDto,
+  UpdateReceiptDto,
+  CreateReceiptTypeDto,
+  UpdateReceiptTypeDto,
   MonthlyCustomerReport,
   MonthlyProjectReport,
   InvoiceReport,
@@ -249,3 +255,83 @@ export const getInvoiceExportData = async(
   return response.data;
 };
 
+// Receipts
+export const getReceipts = async (params?: {
+  startDate?: string;
+  endDate?: string;
+  projectId?: number;
+}): Promise<Receipt[]> => {
+  const response = await api.get<Receipt[]>('/receipts', { params });
+  return response.data;
+};
+
+export const getReceipt = async (id: number): Promise<Receipt> => {
+  const response = await api.get<Receipt>(`/receipts/${id}`);
+  return response.data;
+};
+
+export const createReceipt = async (
+  data: CreateReceiptDto,
+  file?: File
+): Promise<Receipt> => {
+  const formData = new FormData();
+  formData.append('projectId', data.projectId.toString());
+  formData.append('receiptTypeId', data.receiptTypeId.toString());
+  formData.append('date', data.date);
+  formData.append('fileName', data.fileName);
+  formData.append('cost', data.cost.toString());
+  formData.append('currency', data.currency);
+  
+  if (file) {
+    formData.append('file', file);
+  }
+
+  const response = await api.post<Receipt>('/receipts', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
+};
+
+export const updateReceipt = async (id: number, data: UpdateReceiptDto): Promise<void> => {
+  await api.put(`/receipts/${id}`, data);
+};
+
+export const deleteReceipt = async (id: number): Promise<void> => {
+  await api.delete(`/receipts/${id}`);
+};
+
+export const getReceiptsDirectory = async (): Promise<string> => {
+  const response = await api.get<{ path: string }>('/receipts/directory');
+  return response.data.path;
+};
+
+export const setReceiptsDirectory = async (path: string): Promise<string> => {
+  const response = await api.post<{ path: string }>('/receipts/directory', { path });
+  return response.data.path;
+};
+
+// Receipt Types
+export const getReceiptTypes = async (): Promise<ReceiptType[]> => {
+  const response = await api.get<ReceiptType[]>('/receipttypes');
+  return response.data;
+};
+
+export const getReceiptType = async (id: number): Promise<ReceiptType> => {
+  const response = await api.get<ReceiptType>(`/receipttypes/${id}`);
+  return response.data;
+};
+
+export const createReceiptType = async (data: CreateReceiptTypeDto): Promise<ReceiptType> => {
+  const response = await api.post<ReceiptType>('/receipttypes', data);
+  return response.data;
+};
+
+export const updateReceiptType = async (id: number, data: UpdateReceiptTypeDto): Promise<void> => {
+  await api.put(`/receipttypes/${id}`, data);
+};
+
+export const deleteReceiptType = async (id: number): Promise<void> => {
+  await api.delete(`/receipttypes/${id}`);
+};

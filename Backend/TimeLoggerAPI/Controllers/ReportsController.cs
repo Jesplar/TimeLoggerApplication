@@ -175,19 +175,44 @@ public class ReportsController : ControllerBase
             .ThenBy(te => te.Date)
             .ToListAsync();
 
+        // Get receipts for the same period
+        var receiptsQuery = _context.Receipts
+            .Include(r => r.Project)
+            .ThenInclude(p => p.Customer)
+            .Where(r => r.Date >= startDate && r.Date <= endDate);
+
+        if (customerId.HasValue)
+        {
+            receiptsQuery = receiptsQuery.Where(r => r.Project.CustomerId == customerId.Value);
+        }
+
+        var receipts = await receiptsQuery
+            .OrderBy(r => r.Project.Customer.Name)
+            .ThenBy(r => r.Project.ProjectNumber)
+            .ThenBy(r => r.Date)
+            .ToListAsync();
+
+        // Get project IDs from both time entries and receipts
+        var projectIds = entries.Select(e => e.ProjectId)
+            .Concat(receipts.Select(r => r.ProjectId))
+            .Distinct()
+            .ToList();
+
+        // Get all projects for these IDs
+        var projects = await _context.Projects
+            .Include(p => p.Customer)
+            .Where(p => projectIds.Contains(p.Id))
+            .ToListAsync();
+
         // Group by project and calculate costs
-        var projectGroups = entries
-            .GroupBy(te => new 
-            { 
-                te.ProjectId,
-                CustomerName = te.Project.Customer.Name,
-                te.Project.ProjectNumber,
-                ProjectName = te.Project.Name
-            })
-            .Select(g =>
+        var projectGroups = projects
+            .Select(project =>
             {
+                var projectEntries = entries.Where(e => e.ProjectId == project.Id).ToList();
+                var projectReceipts = receipts.Where(r => r.ProjectId == project.Id).ToList();
+
                 // Group regular hours by time code
-                var regularByTimeCode = g
+                var regularByTimeCode = projectEntries
                     .Where(te => !te.IsOnSite)
                     .GroupBy(te => new { te.TimeCode.Code, te.TimeCode.Description })
                     .Select(tcg =>
@@ -205,7 +230,7 @@ public class ReportsController : ControllerBase
                     .ToList();
 
                 // Group on-site hours by time code
-                var onSiteByTimeCode = g
+                var onSiteByTimeCode = projectEntries
                     .Where(te => te.IsOnSite)
                     .GroupBy(te => new { te.TimeCode.Code, te.TimeCode.Description })
                     .Select(tcg =>
@@ -224,19 +249,31 @@ public class ReportsController : ControllerBase
 
                 var regularHours = regularByTimeCode.Sum(tc => tc.Hours);
                 var onSiteHours = onSiteByTimeCode.Sum(tc => tc.Hours);
-                var travelHours = g.Sum(te => (double)(te.TravelHours ?? 0));
-                var travelKm = g.Sum(te => (double)(te.TravelKm ?? 0));
+                var travelHours = projectEntries.Sum(te => (double)(te.TravelHours ?? 0));
+                var travelKm = projectEntries.Sum(te => (double)(te.TravelKm ?? 0));
 
                 var regularCost = regularByTimeCode.Sum(tc => tc.Cost);
                 var onSiteCost = onSiteByTimeCode.Sum(tc => tc.Cost);
                 var travelTimeCost = (decimal)travelHours * settings.TravelHourlyRateEur;
                 var travelDistanceCost = (decimal)travelKm * settings.KmCost;
 
+                // Calculate receipts cost (convert SEK to EUR if needed)
+                var receiptsList = projectReceipts.Select(r => new InvoiceReceiptDto
+                {
+                    Date = r.Date,
+                    FileName = r.FileName,
+                    Cost = r.Cost,
+                    Currency = r.Currency,
+                    CostInEur = r.Currency == "EUR" ? r.Cost : r.Cost / settings.SekToEurRate
+                }).ToList();
+
+                var receiptsCost = receiptsList.Sum(r => r.CostInEur);
+
                 return new InvoiceExportProjectDto
                 {
-                    Customer = g.Key.CustomerName,
-                    ProjectNumber = g.Key.ProjectNumber,
-                    ProjectName = g.Key.ProjectName,
+                    Customer = project.Customer.Name,
+                    ProjectNumber = project.ProjectNumber,
+                    ProjectName = project.Name,
                     Period = $"{startDate:MMMM yyyy}",
                     
                     RegularHoursByTimeCode = regularByTimeCode,
@@ -255,9 +292,10 @@ public class ReportsController : ControllerBase
                     OnSiteCost = onSiteCost,
                     TravelTimeCost = travelTimeCost,
                     TravelDistanceCost = travelDistanceCost,
-                    GrandTotal = regularCost + onSiteCost + travelTimeCost + travelDistanceCost,
+                    ReceiptsCost = receiptsCost,
+                    GrandTotal = regularCost + onSiteCost + travelTimeCost + travelDistanceCost + receiptsCost,
                     
-                    Entries = g.Select(te => new InvoiceReportDto
+                    Entries = projectEntries.Select(te => new InvoiceReportDto
                     {
                         Date = te.Date,
                         Customer = te.Project.Customer.Name,
@@ -272,7 +310,9 @@ public class ReportsController : ControllerBase
                         StartTime = te.StartTime,
                         EndTime = te.EndTime,
                         Description = te.Description ?? string.Empty
-                    }).ToList()
+                    }).ToList(),
+                    
+                    Receipts = receiptsList
                 };
             })
             .OrderBy(p => p.Customer)

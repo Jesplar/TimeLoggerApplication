@@ -269,8 +269,68 @@ export interface InvoiceExportProject {
   onSiteCost: number;
   travelTimeCost: number;
   travelDistanceCost: number;
+  receiptsCost: number;
   grandTotal: number;
   
   entries: InvoiceReport[];
+  receipts: InvoiceReceipt[];
 }
 
+export interface InvoiceReceipt {
+  date: string;
+  fileName: string;
+  cost: number;
+  currency: string;
+  costInEur: number;
+}
+
+export interface Receipt {
+  id: number;
+  projectId: number;
+  projectName: string;
+  projectNumber: string;
+  customerName: string;
+  receiptTypeId: number;
+  receiptTypeName: string;
+  date: string;
+  fileName: string;
+  cost: number;
+  currency: string;
+  createdDate: string;
+  modifiedDate?: string;
+}
+
+export interface CreateReceiptDto {
+  projectId: number;
+  receiptTypeId: number;
+  date: string;
+  fileName: string;
+  cost: number;
+  currency: string;
+}
+
+export interface UpdateReceiptDto {
+  projectId: number;
+  receiptTypeId: number;
+  date: string;
+  fileName: string;
+  cost: number;
+  currency: string;
+}
+
+export interface ReceiptType {
+  id: number;
+  name: string;
+  isActive: boolean;
+  createdDate: string;
+  modifiedDate?: string;
+}
+
+export interface CreateReceiptTypeDto {
+  name: string;
+}
+
+export interface UpdateReceiptTypeDto {
+  name: string;
+  isActive: boolean;
+}

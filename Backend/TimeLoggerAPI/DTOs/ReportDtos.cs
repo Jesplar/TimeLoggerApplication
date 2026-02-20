@@ -144,10 +144,14 @@ public class InvoiceExportProjectDto
     public decimal OnSiteCost { get; set; }
     public decimal TravelTimeCost { get; set; }
     public decimal TravelDistanceCost { get; set; }
+    public decimal ReceiptsCost { get; set; }
     public decimal GrandTotal { get; set; }
     
     // Detailed entries for this project
     public List<InvoiceReportDto> Entries { get; set; } = new();
+    
+    // Receipts for this project
+    public List<InvoiceReceiptDto> Receipts { get; set; } = new();
 }
 
 public class TimeCodeHoursDto
@@ -156,4 +160,13 @@ public class TimeCodeHoursDto
     public string TimeCodeDescription { get; set; } = string.Empty;
     public double Hours { get; set; }
     public decimal Cost { get; set; }
+}
+
+public class InvoiceReceiptDto
+{
+    public DateTime Date { get; set; }
+    public string FileName { get; set; } = string.Empty;
+    public decimal Cost { get; set; }
+    public string Currency { get; set; } = string.Empty;
+    public decimal CostInEur { get; set; }
 }

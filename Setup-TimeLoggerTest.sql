@@ -111,6 +111,50 @@ CREATE INDEX IX_TimeEntries_Date ON TimeEntries(Date);
 CREATE INDEX IX_TimeEntries_ProjectId ON TimeEntries(ProjectId);
 GO
 
+-- Create ReceiptTypes table
+CREATE TABLE ReceiptTypes (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Name NVARCHAR(100) NOT NULL,
+    IsActive BIT NOT NULL DEFAULT 1,
+    CreatedDate DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    ModifiedDate DATETIME2 NULL
+);
+GO
+
+CREATE UNIQUE INDEX IX_ReceiptTypes_Name ON ReceiptTypes(Name);
+GO
+
+-- Insert default receipt types
+INSERT INTO ReceiptTypes (Name, IsActive, CreatedDate)
+VALUES 
+    ('Fuel', 1, GETUTCDATE()),
+    ('Hotel', 1, GETUTCDATE()),
+    ('PlaneTicket', 1, GETUTCDATE()),
+    ('Representation', 1, GETUTCDATE()),
+    ('AirBnB', 1, GETUTCDATE()),
+    ('RentalCar', 1, GETUTCDATE());
+GO
+
+-- Create Receipts table
+CREATE TABLE Receipts (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    ProjectId INT NOT NULL,
+    ReceiptTypeId INT NOT NULL,
+    Date DATE NOT NULL,
+    FileName NVARCHAR(500) NOT NULL,
+    Cost DECIMAL(10,2) NOT NULL,
+    Currency NVARCHAR(3) NOT NULL, -- 'SEK' or 'EUR'
+    CreatedDate DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+    ModifiedDate DATETIME2 NULL,
+    CONSTRAINT FK_Receipts_Projects FOREIGN KEY (ProjectId) REFERENCES Projects(Id),
+    CONSTRAINT FK_Receipts_ReceiptTypes FOREIGN KEY (ReceiptTypeId) REFERENCES ReceiptTypes(Id)
+);
+GO
+
+CREATE INDEX IX_Receipts_Date ON Receipts(Date);
+CREATE INDEX IX_Receipts_ProjectId ON Receipts(ProjectId);
+GO
+
 -- Insert sample data for testing
 INSERT INTO Customers (Name, IsActive, CreatedDate)
 VALUES 
