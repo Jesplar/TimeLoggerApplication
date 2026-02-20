@@ -81,10 +81,10 @@ public class TimeLoggerContext : DbContext
             
             // Seed initial time codes
             entity.HasData(
-                new TimeCode { Id = 1, Code = 500, Description = "Project management", IsActive = true, CreatedDate = DateTime.UtcNow },
-                new TimeCode { Id = 2, Code = 530, Description = "StoreWare Software programming", IsActive = true, CreatedDate = DateTime.UtcNow },
-                new TimeCode { Id = 3, Code = 540, Description = "StoreWare visualisation", IsActive = true, CreatedDate = DateTime.UtcNow },
-                new TimeCode { Id = 4, Code = 560, Description = "Simulation", IsActive = true, CreatedDate = DateTime.UtcNow }
+                new TimeCode { Id = 1, Code = 500, Description = "Project management", IsActive = true, CreatedDate = new DateTime(2026, 2, 20, 0, 0, 0, DateTimeKind.Utc) },
+                new TimeCode { Id = 2, Code = 530, Description = "StoreWare Software programming", IsActive = true, CreatedDate = new DateTime(2026, 2, 20, 0, 0, 0, DateTimeKind.Utc) },
+                new TimeCode { Id = 3, Code = 540, Description = "StoreWare visualisation", IsActive = true, CreatedDate = new DateTime(2026, 2, 20, 0, 0, 0, DateTimeKind.Utc) },
+                new TimeCode { Id = 4, Code = 560, Description = "Simulation", IsActive = true, CreatedDate = new DateTime(2026, 2, 20, 0, 0, 0, DateTimeKind.Utc) }
             );
         });
 
@@ -105,7 +105,7 @@ public class TimeLoggerContext : DbContext
                 HourlyRateEur = 152m,
                 TravelHourlyRateEur = 83.20m,
                 KmCost = 0.80m,
-                CreatedDate = DateTime.UtcNow
+                CreatedDate = new DateTime(2026, 2, 20, 0, 0, 0, DateTimeKind.Utc)
             });
         });
 
@@ -143,12 +143,12 @@ public class TimeLoggerContext : DbContext
             
             // Seed initial receipt types
             entity.HasData(
-                new ReceiptType { Id = 1, Name = "Fuel", IsActive = true, CreatedDate = DateTime.UtcNow },
-                new ReceiptType { Id = 2, Name = "Hotel", IsActive = true, CreatedDate = DateTime.UtcNow },
-                new ReceiptType { Id = 3, Name = "PlaneTicket", IsActive = true, CreatedDate = DateTime.UtcNow },
-                new ReceiptType { Id = 4, Name = "Representation", IsActive = true, CreatedDate = DateTime.UtcNow },
-                new ReceiptType { Id = 5, Name = "AirBnB", IsActive = true, CreatedDate = DateTime.UtcNow },
-                new ReceiptType { Id = 6, Name = "RentalCar", IsActive = true, CreatedDate = DateTime.UtcNow }
+                new ReceiptType { Id = 1, Name = "Fuel", IsActive = true, CreatedDate = new DateTime(2026, 2, 20, 0, 0, 0, DateTimeKind.Utc) },
+                new ReceiptType { Id = 2, Name = "Hotel", IsActive = true, CreatedDate = new DateTime(2026, 2, 20, 0, 0, 0, DateTimeKind.Utc) },
+                new ReceiptType { Id = 3, Name = "PlaneTicket", IsActive = true, CreatedDate = new DateTime(2026, 2, 20, 0, 0, 0, DateTimeKind.Utc) },
+                new ReceiptType { Id = 4, Name = "Representation", IsActive = true, CreatedDate = new DateTime(2026, 2, 20, 0, 0, 0, DateTimeKind.Utc) },
+                new ReceiptType { Id = 5, Name = "AirBnB", IsActive = true, CreatedDate = new DateTime(2026, 2, 20, 0, 0, 0, DateTimeKind.Utc) },
+                new ReceiptType { Id = 6, Name = "RentalCar", IsActive = true, CreatedDate = new DateTime(2026, 2, 20, 0, 0, 0, DateTimeKind.Utc) }
             );
         });
     }
