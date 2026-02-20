@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import {
   getMonthlyCustomerReport,
   getMonthlyProjectReport,
@@ -249,133 +250,124 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
         return;
       }
 
-      const aoa: any[][] = [];
-      const boldRows: number[] = []; // Track rows that should be bold
-      let currentRow = 0;
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Invoice');
+      
+      // Set column widths
+      worksheet.columns = [
+        { width: 20 },
+        { width: 15 },
+        { width: 15 },
+        { width: 12 },
+        { width: 15 },
+      ];
+      
+      let currentRow = 1;
       
       for (let i = 0; i < invoiceData.length; i++) {
         const project = invoiceData[i];
         
-        // Customer/Project Header (merged across columns) - BOLD
-        aoa.push([project.customer]);
-        boldRows.push(currentRow);
+        // Customer Header - BOLD
+        worksheet.getCell(currentRow, 1).value = project.customer;
+        worksheet.getRow(currentRow).font = { bold: true };
         currentRow++;
         
-        aoa.push([`Project: ${project.projectNumber} - ${project.projectName}`]);
-        boldRows.push(currentRow);
+        // Project Header - BOLD
+        worksheet.getCell(currentRow, 1).value = `Project: ${project.projectNumber} - ${project.projectName}`;
+        worksheet.getRow(currentRow).font = { bold: true };
         currentRow++;
         
-        aoa.push([`Period: ${project.period}`]);
+        // Period
+        worksheet.getCell(currentRow, 1).value = `Period: ${project.period}`;
         currentRow++;
         
-        aoa.push([]);
+        // Empty row
         currentRow++;
         
         // Cost breakdown header row - BOLD
-        aoa.push(['', 'Regular Hours', 'On-Site Hours', 'Travel Time', 'Travel Distance']);
-        boldRows.push(currentRow);
+        const headerRow = worksheet.getRow(currentRow);
+        headerRow.values = ['', 'Regular Hours', 'On-Site Hours', 'Travel Time', 'Travel Distance'];
+        headerRow.font = { bold: true };
         currentRow++;
         
         // Hours/Km row
-        aoa.push([
+        worksheet.getRow(currentRow).values = [
           'Hours/Km',
           project.regularHours,
           project.onSiteHours,
           project.travelHours,
           project.travelKm
-        ]);
+        ];
         currentRow++;
         
         // Rate row
-        aoa.push([
+        worksheet.getRow(currentRow).values = [
           'Rate (€)',
           project.hourlyRate,
           project.hourlyRate,
           project.travelHourlyRate,
           project.kmCost
-        ]);
+        ];
         currentRow++;
         
         // Total row with formulas - BOLD
-        const baseRow = currentRow + 1; // Excel is 1-indexed
-        aoa.push([
-          'Total (€)',
-          { f: `B${baseRow-1}*B${baseRow}` },
-          { f: `C${baseRow-1}*C${baseRow}` },
-          { f: `D${baseRow-1}*D${baseRow}` },
-          { f: `E${baseRow-1}*E${baseRow}` }
-        ]);
-        boldRows.push(currentRow);
+        const totalRow = worksheet.getRow(currentRow);
+        totalRow.getCell(1).value = 'Total (€)';
+        totalRow.getCell(2).value = { formula: `B${currentRow-1}*B${currentRow}` };
+        totalRow.getCell(3).value = { formula: `C${currentRow-1}*C${currentRow}` };
+        totalRow.getCell(4).value = { formula: `D${currentRow-1}*D${currentRow}` };
+        totalRow.getCell(5).value = { formula: `E${currentRow-1}*E${currentRow}` };
+        totalRow.font = { bold: true };
         currentRow++;
         
-        aoa.push([]);
+        // Empty row
         currentRow++;
         
         // Detailed entries header - BOLD
-        aoa.push(['Date', 'Description', 'Hours', 'On-Site', 'Travel Hrs', 'Travel Km']);
-        boldRows.push(currentRow);
+        const detailHeaderRow = worksheet.getRow(currentRow);
+        detailHeaderRow.values = ['Date', 'Description', 'Hours', 'On-Site', 'Travel Hrs', 'Travel Km'];
+        detailHeaderRow.font = { bold: true };
         currentRow++;
         
         // Detailed entries
         project.entries.forEach(entry => {
-          aoa.push([
+          worksheet.getRow(currentRow).values = [
             format(new Date(entry.date), 'yyyy-MM-dd'),
             entry.description || '',
             entry.hours,
             entry.isOnSite ? 'Yes' : 'No',
             entry.travelHours || 0,
             entry.travelKm || 0
-          ]);
+          ];
           currentRow++;
         });
         
-        aoa.push([]);
+        // Empty row
         currentRow++;
         
         // Project total - BOLD
-        aoa.push([`PROJECT TOTAL: €${project.grandTotal.toFixed(2)}`]);
-        boldRows.push(currentRow);
+        const projectTotalRow = worksheet.getRow(currentRow);
+        projectTotalRow.getCell(1).value = `PROJECT TOTAL: €${project.grandTotal.toFixed(2)}`;
+        projectTotalRow.font = { bold: true };
         currentRow++;
         
         // Separator between projects
         if (i < invoiceData.length - 1) {
-          aoa.push([]);
-          currentRow++;
-          aoa.push([]);
-          currentRow++;
+          currentRow += 2;
         }
       }
-      
-      const worksheet = XLSX.utils.aoa_to_sheet(aoa);
-      
-      // Apply bold styling to specified rows
-      boldRows.forEach(rowIdx => {
-        const cellRange = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-        for (let col = cellRange.s.c; col <= cellRange.e.c; col++) {
-          const cellAddress = XLSX.utils.encode_cell({ r: rowIdx, c: col });
-          if (worksheet[cellAddress]) {
-            if (!worksheet[cellAddress].s) worksheet[cellAddress].s = {};
-            worksheet[cellAddress].s = { font: { bold: true } };
-          }
-        }
-      });
-      
-      // Set column widths
-      worksheet['!cols'] = [
-        { wch: 20 }, // Date/Label column
-        { wch: 15 }, // Regular Hours/Description
-        { wch: 15 }, // On-Site Hours
-        { wch: 12 }, // Travel Time
-        { wch: 15 }, // Travel Distance
-      ];
-      
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Invoice');
       
       const timestamp = format(new Date(), 'yyyy-MM-dd-HHmmss');
       const filename = `Invoice_${timestamp}.xlsx`;
       
-      XLSX.writeFile(workbook, filename);
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      window.URL.revokeObjectURL(url);
     } catch (err: any) {
       setError(err.message || 'Failed to export invoice');
     } finally {
@@ -395,134 +387,180 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
         return;
       }
 
-      const workbook = XLSX.utils.book_new();
+      const workbook = new ExcelJS.Workbook();
       
       invoiceData.forEach(project => {
-        const aoa: any[][] = [];
-        const boldRows: number[] = []; // Track rows that should be bold
-        let currentRow = 0;
+        const sheetName = `${project.customer}-${project.projectNumber}`.substring(0, 31);
+        const worksheet = workbook.addWorksheet(sheetName);
+        
+        // Set column widths
+        worksheet.columns = [
+          { width: 20 },
+          { width: 25 },
+          { width: 30 },
+          { width: 10 },
+          { width: 12 },
+          { width: 12 },
+          { width: 15 },
+        ];
+        
+        let currentRow = 1;
         
         // Header - BOLD
-        aoa.push(['Customer:', project.customer, '', '', '', '']);
-        boldRows.push(currentRow);
+        let row = worksheet.getRow(currentRow);
+        row.values = ['Customer:', project.customer, '', '', '', ''];
+        row.font = { bold: true };
         currentRow++;
         
-        aoa.push(['Project:', `${project.projectNumber} - ${project.projectName}`, '', '', '', '']);
-        boldRows.push(currentRow);
+        row = worksheet.getRow(currentRow);
+        row.values = ['Project:', `${project.projectNumber} - ${project.projectName}`, '', '', '', ''];
+        row.font = { bold: true };
         currentRow++;
         
-        aoa.push(['Period:', project.period, '', '', '', '']);
+        row = worksheet.getRow(currentRow);
+        row.values = ['Period:', project.period, '', '', '', ''];
         currentRow++;
         
-        aoa.push([]);
+        // Empty row
         currentRow++;
         
         // Regular Hours Section with Time Code breakdown
         if (project.regularHours > 0) {
-          aoa.push(['═══ REGULAR HOURS ═══', '', '', '', '', '']);
-          boldRows.push(currentRow); // Section header bold
+          row = worksheet.getRow(currentRow);
+          row.values = ['═══ REGULAR HOURS ═══', '', '', '', '', ''];
+          row.font = { bold: true };
           currentRow++;
           
           project.regularHoursByTimeCode.forEach(tc => {
-            aoa.push([`${tc.timeCode} - ${tc.timeCodeDescription}:`, `${tc.hours} hours`, 'Rate:', `€${project.hourlyRate}`, 'Total:', `€${tc.cost.toFixed(2)}`]);
+            worksheet.getRow(currentRow).values = [
+              `${tc.timeCode} - ${tc.timeCodeDescription}:`,
+              `${tc.hours} hours`,
+              'Rate:',
+              `€${project.hourlyRate}`,
+              'Total:',
+              `€${tc.cost.toFixed(2)}`
+            ];
             currentRow++;
           });
           
-          aoa.push(['REGULAR SUBTOTAL:', `${project.regularHours} hours`, '', '', 'Total:', `€${project.regularCost.toFixed(2)}`]);
-          boldRows.push(currentRow); // Subtotal bold
+          row = worksheet.getRow(currentRow);
+          row.values = ['REGULAR SUBTOTAL:', `${project.regularHours} hours`, '', '', 'Total:', `€${project.regularCost.toFixed(2)}`];
+          row.font = { bold: true };
           currentRow++;
           
-          aoa.push([]);
           currentRow++;
         }
         
         // On-Site Hours Section with Time Code breakdown
         if (project.onSiteHours > 0) {
-          aoa.push(['═══ ON-SITE HOURS ═══', '', '', '', '', '']);
-          boldRows.push(currentRow); // Section header bold
+          row = worksheet.getRow(currentRow);
+          row.values = ['═══ ON-SITE HOURS ═══', '', '', '', '', ''];
+          row.font = { bold: true };
           currentRow++;
           
           project.onSiteHoursByTimeCode.forEach(tc => {
-            aoa.push([`${tc.timeCode} - ${tc.timeCodeDescription}:`, `${tc.hours} hours`, 'Rate:', `€${project.hourlyRate}`, 'Total:', `€${tc.cost.toFixed(2)}`]);
+            worksheet.getRow(currentRow).values = [
+              `${tc.timeCode} - ${tc.timeCodeDescription}:`,
+              `${tc.hours} hours`,
+              'Rate:',
+              `€${project.hourlyRate}`,
+              'Total:',
+              `€${tc.cost.toFixed(2)}`
+            ];
             currentRow++;
           });
           
-          aoa.push(['ON-SITE SUBTOTAL:', `${project.onSiteHours} hours`, '', '', 'Total:', `€${project.onSiteCost.toFixed(2)}`]);
-          boldRows.push(currentRow); // Subtotal bold
+          row = worksheet.getRow(currentRow);
+          row.values = ['ON-SITE SUBTOTAL:', `${project.onSiteHours} hours`, '', '', 'Total:', `€${project.onSiteCost.toFixed(2)}`];
+          row.font = { bold: true };
           currentRow++;
           
-          aoa.push([]);
           currentRow++;
         }
         
         // Travel Section
         if (project.travelHours > 0 || project.travelKm > 0) {
-          aoa.push(['═══ TRAVEL ═══', '', '', '', '', '']);
-          boldRows.push(currentRow); // Section header bold
+          row = worksheet.getRow(currentRow);
+          row.values = ['═══ TRAVEL ═══', '', '', '', '', ''];
+          row.font = { bold: true };
           currentRow++;
           
           if (project.travelHours > 0) {
-            aoa.push(['Travel Time:', `${project.travelHours} hours`, 'Rate:', `€${project.travelHourlyRate}/hr`, 'Total:', `€${project.travelTimeCost.toFixed(2)}`]);
+            worksheet.getRow(currentRow).values = [
+              'Travel Time:',
+              `${project.travelHours} hours`,
+              'Rate:',
+              `€${project.travelHourlyRate}/hr`,
+              'Total:',
+              `€${project.travelTimeCost.toFixed(2)}`
+            ];
             currentRow++;
           }
           if (project.travelKm > 0) {
-            aoa.push(['Travel Distance:', `${project.travelKm} km`, 'Rate:', `€${project.kmCost}/km`, 'Total:', `€${project.travelDistanceCost.toFixed(2)}`]);
+            worksheet.getRow(currentRow).values = [
+              'Travel Distance:',
+              `${project.travelKm} km`,
+              'Rate:',
+              `€${project.kmCost}/km`,
+              'Total:',
+              `€${project.travelDistanceCost.toFixed(2)}`
+            ];
             currentRow++;
           }
-          aoa.push([]);
           currentRow++;
         }
         
         // Receipts Section
         if (project.receipts && project.receipts.length > 0) {
-          aoa.push(['═══ RECEIPTS ═══', '', '', '', '', '']);
-          boldRows.push(currentRow); // Section header bold
+          row = worksheet.getRow(currentRow);
+          row.values = ['═══ RECEIPTS ═══', '', '', '', '', ''];
+          row.font = { bold: true };
           currentRow++;
           
           project.receipts.forEach(receipt => {
             const costDisplay = receipt.currency === 'EUR' 
               ? `€${receipt.cost.toFixed(2)}`
               : `${receipt.cost.toFixed(2)} SEK`;
-            aoa.push([
+            worksheet.getRow(currentRow).values = [
               format(new Date(receipt.date), 'MMM dd, yyyy'),
               receipt.fileName,
               costDisplay,
               '',
               'Total:',
               `€${receipt.costInEur.toFixed(2)}`
-            ]);
+            ];
             currentRow++;
           });
           
-          aoa.push(['RECEIPTS SUBTOTAL:', '', '', '', 'Total:', `€${project.receiptsCost.toFixed(2)}`]);
-          boldRows.push(currentRow); // Subtotal bold
+          row = worksheet.getRow(currentRow);
+          row.values = ['RECEIPTS SUBTOTAL:', '', '', '', 'Total:', `€${project.receiptsCost.toFixed(2)}`];
+          row.font = { bold: true };
           currentRow++;
           
-          aoa.push([]);
           currentRow++;
         }
         
         // Total - BOLD
-        aoa.push(['', '', '', '', 'PROJECT TOTAL:', `€${project.grandTotal.toFixed(2)}`]);
-        boldRows.push(currentRow);
+        row = worksheet.getRow(currentRow);
+        row.values = ['', '', '', '', 'PROJECT TOTAL:', `€${project.grandTotal.toFixed(2)}`];
+        row.font = { bold: true };
         currentRow++;
         
-        aoa.push([]);
-        currentRow++;
-        aoa.push([]);
-        currentRow++;
+        currentRow += 2;
         
         // Detailed entries
-        aoa.push(['═══ TIME ENTRY DETAILS ═══', '', '', '', '', '', '']);
-        boldRows.push(currentRow); // Section header bold
+        row = worksheet.getRow(currentRow);
+        row.values = ['═══ TIME ENTRY DETAILS ═══', '', '', '', '', '', ''];
+        row.font = { bold: true };
         currentRow++;
         
-        aoa.push(['Date', 'Time Code', 'Description', 'Hours', 'Work Type', 'Travel Time', 'Travel Distance']);
-        boldRows.push(currentRow); // Table header bold
+        row = worksheet.getRow(currentRow);
+        row.values = ['Date', 'Time Code', 'Description', 'Hours', 'Work Type', 'Travel Time', 'Travel Distance'];
+        row.font = { bold: true };
         currentRow++;
         
         project.entries.forEach(entry => {
-          aoa.push([
+          worksheet.getRow(currentRow).values = [
             format(new Date(entry.date), 'EEE, MMM dd, yyyy'),
             `${entry.timeCode} - ${entry.timeCodeDescription}`,
             entry.description || '(no description)',
@@ -530,44 +568,22 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
             entry.isOnSite ? 'On-Site' : 'Regular',
             entry.travelHours ? `${entry.travelHours.toFixed(2)} hrs` : '-',
             entry.travelKm ? `${entry.travelKm.toFixed(0)} km` : '-'
-          ]);
+          ];
           currentRow++;
         });
-        
-        const worksheet = XLSX.utils.aoa_to_sheet(aoa);
-        
-        // Apply bold styling to specified rows
-        boldRows.forEach(rowIdx => {
-          const cellRange = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-          for (let col = cellRange.s.c; col <= cellRange.e.c; col++) {
-            const cellAddress = XLSX.utils.encode_cell({ r: rowIdx, c: col });
-            if (worksheet[cellAddress]) {
-              if (!worksheet[cellAddress].s) worksheet[cellAddress].s = {};
-              worksheet[cellAddress].s = { font: { bold: true } };
-            }
-          }
-        });
-        
-        // Set column widths
-        worksheet['!cols'] = [
-          { wch: 20 },
-          { wch: 25 },
-          { wch: 30 },
-          { wch: 10 },
-          { wch: 12 },
-          { wch: 12 },
-          { wch: 15 },
-        ];
-        
-        // Create sheet name (max 31 chars for Excel)
-        const sheetName = `${project.customer}-${project.projectNumber}`.substring(0, 31);
-        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
       });
       
       const timestamp = format(new Date(), 'yyyy-MM-dd-HHmmss');
       const filename = `Invoice_Detailed_${timestamp}.xlsx`;
       
-      XLSX.writeFile(workbook, filename);
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      window.URL.revokeObjectURL(url);
     } catch (err: any) {
       setError(err.message || 'Failed to export invoice');
     } finally {
