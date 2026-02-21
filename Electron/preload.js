@@ -1,8 +1,10 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-// Expose API URL to renderer process
+// Expose API URL and update controls to renderer process
 contextBridge.exposeInMainWorld('electronAPI', {
-  getApiUrl: () => ipcRenderer.invoke('get-api-url')
+  getApiUrl: () => ipcRenderer.invoke('get-api-url'),
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  onUpdateStatus: (callback) => ipcRenderer.on('update-status', (event, info) => callback(info)),
 });
 
 // Listen for API URL from main process

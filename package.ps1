@@ -1,5 +1,21 @@
 # Time Logger - Production Packaging Script
 # Creates installer and portable package
+#
+# RELEASING A NEW VERSION:
+# 1. Bump the version in Electron/package.json
+# 2. Create a GitHub Personal Access Token with 'repo' scope
+#    (GitHub → Settings → Developer settings → Personal access tokens)
+# 3. Set the token: $env:GH_TOKEN = "your_token_here"
+# 4. Run: .\package.ps1 -Publish
+#    This builds, packages, and publishes a GitHub Release automatically.
+#    electron-updater will then notify users on next app start.
+#
+# WITHOUT PUBLISHING (local build only):
+#    .\package.ps1
+
+param(
+  [switch]$Publish
+)
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Time Logger - Production Packaging  " -ForegroundColor Cyan
@@ -21,8 +37,19 @@ Write-Host "Step 2: Creating installer and portable package..." -ForegroundColor
 # Navigate to Electron directory
 Set-Location "$PSScriptRoot\Electron"
 
-# Run electron-builder to create packages
-npm run build
+# Run electron-builder to create packages (optionally publish to GitHub)
+if ($Publish) {
+  if (-not $env:GH_TOKEN) {
+    Write-Host "ERROR: GH_TOKEN environment variable is not set." -ForegroundColor Red
+    Write-Host "Set it with: `$env:GH_TOKEN = 'your_github_token'" -ForegroundColor Yellow
+    Set-Location $PSScriptRoot
+    exit 1
+  }
+  Write-Host "Publishing to GitHub Releases..." -ForegroundColor Cyan
+  npm run build -- --publish always
+} else {
+  npm run build
+}
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Packaging failed!" -ForegroundColor Red

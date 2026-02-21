@@ -33,11 +33,20 @@ export const SettingsView: React.FC = () => {
   // Database state
   const [databaseInfo, setDatabaseInfo] = useState<any>(null);
 
+  // Update state
+  const [updateStatus, setUpdateStatus] = useState<{ status: string; version?: string; percent?: number; message?: string } | null>(null);
+  const isElectron = !!(window as any).electronAPI;
+
   useEffect(() => {
     loadSettings();
     loadTimeCodes();
     loadReceiptTypes();
     loadDatabaseInfo();
+
+    // Listen for update status from Electron main process
+    if ((window as any).electronAPI?.onUpdateStatus) {
+      (window as any).electronAPI.onUpdateStatus((info: any) => setUpdateStatus(info));
+    }
   }, []);
 
   const loadSettings = async () => {
@@ -651,7 +660,41 @@ export const SettingsView: React.FC = () => {
               </div>
 
               <div className="info-section">
-                <h3>About Database Modes</h3>
+                <h3>Application Update</h3>
+                <div className="info-row">
+                  <strong>Version:</strong>
+                  <span>{(window as any).electronAPI ? 'Installed' : 'Development'}</span>
+                </div>
+                {updateStatus && (
+                  <div className="info-row">
+                    <strong>Status:</strong>
+                    <span className={
+                      updateStatus.status === 'available' || updateStatus.status === 'downloaded' ? 'status-ok' :
+                      updateStatus.status === 'error' ? 'status-error' : undefined
+                    }>
+                      {updateStatus.status === 'checking' && 'Checking for updates...'}
+                      {updateStatus.status === 'up-to-date' && '✓ Up to date'}
+                      {updateStatus.status === 'available' && `Version ${updateStatus.version} available`}
+                      {updateStatus.status === 'downloading' && `Downloading... ${updateStatus.percent ?? 0}%`}
+                      {updateStatus.status === 'downloaded' && `✓ Version ${updateStatus.version} ready — restart to install`}
+                      {updateStatus.status === 'error' && `Update error: ${updateStatus.message}`}
+                    </span>
+                  </div>
+                )}
+                {isElectron && (
+                  <div style={{ marginTop: '0.75rem' }}>
+                    <button
+                      onClick={() => (window as any).electronAPI.checkForUpdates()}
+                      className="secondary"
+                      style={{ fontSize: '0.85rem' }}
+                    >
+                      Check for Updates
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="info-section">
                 <div>
                   <p className="settings-description">
                     <strong>Installed Mode:</strong> Database is stored in your user profile 

@@ -179,10 +179,64 @@ TimeLoggerApplication/
 - Run `.\build.ps1` to rebuild
 - Hard refresh in app (Ctrl+Shift+R)
 
+## Releasing a New Version
+
+### One-time GitHub Setup
+
+1. In `Electron/package.json`, set your GitHub username and repo name under `build.publish`:
+   ```json
+   "publish": {
+     "provider": "github",
+     "owner": "jesplar",
+     "repo": "TimeLoggerApplication"
+   }
+   ```
+
+2. Create a GitHub Personal Access Token with `repo` scope:
+   - GitHub → Settings → Developer settings → Personal access tokens → Generate new token
+   - Save it somewhere safe
+
+### Publishing a Release (GitHub auto-update)
+
+Installed users will be notified automatically on next launch.
+
+```powershell
+# 1. Bump the version in Electron/package.json
+#    e.g. "version": "1.0.0"  →  "version": "1.1.0"
+
+# 2. Build and publish to GitHub Releases
+$env:GH_TOKEN = "ghp_your_token_here"
+.\package.ps1 -Publish
+```
+
+This will:
+- Build the backend, frontend, and Electron app
+- Create the installer and portable packages
+- Publish a GitHub Release with all artifacts and a `latest.yml` update manifest
+- Existing installed users will see an "Update Available" dialog on next launch
+
+> **Note:** The portable version does not auto-update. Users running portable must download the new release manually.
+
+### Local / Manual Update (no GitHub)
+
+If you distribute updates directly (e.g. via email or shared drive) without GitHub:
+
+```powershell
+# Build packages locally (no publish)
+.\package.ps1
+```
+
+Send the user the new `Time Logger Setup x.x.x.exe` installer.  
+They can run it directly over the existing installation — no uninstall required.  
+The database in `%LOCALAPPDATA%\TimeLogger\` is never touched by the installer.
+
+---
+
 ## Scripts
 
 - `build.ps1` - Build backend, frontend, and copy to Electron
 - `package.ps1` - Create installer and portable packages
+- `package.ps1 -Publish` - Build and publish a GitHub Release (requires `$env:GH_TOKEN`)
 
 ## License
 

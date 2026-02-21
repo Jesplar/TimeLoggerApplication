@@ -1,8 +1,9 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const net = require('net');
 const fs = require('fs');
+const { autoUpdater } = require('electron-updater');
 
 let mainWindow;
 let backendProcess;
@@ -178,6 +179,11 @@ app.whenReady().then(async () => {
     await startBackend();
     createWindow();
 
+    // Check for updates after window is ready (installed mode only)
+    if (app.isPackaged && !isPortableMode) {
+      setupAutoUpdater();
+    }
+
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();
@@ -205,3 +211,74 @@ app.on('before-quit', () => {
 ipcMain.handle('get-api-url', () => {
   return `http://localhost:${apiPort}/api`;
 });
+
+ipcMain.handle('check-for-updates', () => {
+  if (app.isPackaged && !isPortableMode) {
+    autoUpdater.checkForUpdates();
+  }
+});
+
+// Auto-updater setup
+function setupAutoUpdater() {
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('checking-for-update', () => {
+    console.log('Checking for updates...');
+    if (mainWindow) mainWindow.webContents.send('update-status', { status: 'checking' });
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    console.log('Update available:', info.version);
+    if (mainWindow) mainWindow.webContents.send('update-status', { status: 'available', version: info.version });
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update Available',
+      message: `Version ${info.version} is available`,
+      detail: 'Download and install now? The app will restart when complete.',
+      buttons: ['Download', 'Later'],
+      defaultId: 0,
+    }).then(({ response }) => {
+      if (response === 0) {
+        autoUpdater.downloadUpdate();
+        if (mainWindow) mainWindow.webContents.send('update-status', { status: 'downloading' });
+      }
+    });
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    console.log('App is up to date.');
+    if (mainWindow) mainWindow.webContents.send('update-status', { status: 'up-to-date' });
+  });
+
+  autoUpdater.on('download-progress', (progress) => {
+    const percent = Math.round(progress.percent);
+    console.log(`Download progress: ${percent}%`);
+    if (mainWindow) mainWindow.webContents.send('update-status', { status: 'downloading', percent });
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('Update downloaded:', info.version);
+    if (mainWindow) mainWindow.webContents.send('update-status', { status: 'downloaded', version: info.version });
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update Ready',
+      message: `Version ${info.version} downloaded`,
+      detail: 'Restart the application to apply the update.',
+      buttons: ['Restart Now', 'Later'],
+      defaultId: 0,
+    }).then(({ response }) => {
+      if (response === 0) {
+        autoUpdater.quitAndInstall();
+      }
+    });
+  });
+
+  autoUpdater.on('error', (error) => {
+    console.error('Auto-updater error:', error);
+    if (mainWindow) mainWindow.webContents.send('update-status', { status: 'error', message: error.message });
+  });
+
+  // Check 5 seconds after startup to not delay app launch
+  setTimeout(() => autoUpdater.checkForUpdates(), 5000);
+}
