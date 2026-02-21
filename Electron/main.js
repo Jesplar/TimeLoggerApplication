@@ -212,6 +212,10 @@ ipcMain.handle('get-api-url', () => {
   return `http://localhost:${apiPort}/api`;
 });
 
+ipcMain.handle('get-app-version', () => {
+  return app.getVersion();
+});
+
 ipcMain.handle('check-for-updates', () => {
   if (app.isPackaged && !isPortableMode) {
     autoUpdater.checkForUpdates();

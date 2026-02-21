@@ -35,6 +35,7 @@ export const SettingsView: React.FC = () => {
 
   // Update state
   const [updateStatus, setUpdateStatus] = useState<{ status: string; version?: string; percent?: number; message?: string } | null>(null);
+  const [appVersion, setAppVersion] = useState<string | null>(null);
   const isElectron = !!(window as any).electronAPI;
 
   useEffect(() => {
@@ -46,6 +47,9 @@ export const SettingsView: React.FC = () => {
     // Listen for update status from Electron main process
     if ((window as any).electronAPI?.onUpdateStatus) {
       (window as any).electronAPI.onUpdateStatus((info: any) => setUpdateStatus(info));
+    }
+    if ((window as any).electronAPI?.getAppVersion) {
+      (window as any).electronAPI.getAppVersion().then((v: string) => setAppVersion(v));
     }
   }, []);
 
@@ -663,7 +667,7 @@ export const SettingsView: React.FC = () => {
                 <h3>Application Update</h3>
                 <div className="info-row">
                   <strong>Version:</strong>
-                  <span>{(window as any).electronAPI ? 'Installed' : 'Development'}</span>
+                  <span>{appVersion ?? ((window as any).electronAPI ? 'Loading...' : 'Development')}</span>
                 </div>
                 {updateStatus && (
                   <div className="info-row">
