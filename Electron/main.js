@@ -2,10 +2,54 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const net = require('net');
+const fs = require('fs');
 
 let mainWindow;
 let backendProcess;
 let apiPort = 5000;
+let isPortableMode = false;
+let databasePath = '';
+
+// Detect portable mode and set database path
+function detectPortableModeAndSetupDatabase() {
+  const isDev = !app.isPackaged;
+  
+  // Check for portable.txt marker file
+  let portableMarkerPath;
+  if (isDev) {
+    portableMarkerPath = path.join(__dirname, 'portable.txt');
+  } else {
+    portableMarkerPath = path.join(process.resourcesPath, 'portable.txt');
+  }
+  
+  isPortableMode = fs.existsSync(portableMarkerPath);
+  
+  if (isPortableMode) {
+    // Portable mode: database in Data folder next to app
+    const dataDir = isDev 
+      ? path.join(__dirname, 'Data')
+      : path.join(process.resourcesPath, 'Data');
+    
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    
+    databasePath = path.join(dataDir, 'timelogger.db');
+  } else {
+    // Installed mode: database in user's AppData
+    const userDataPath = app.getPath('userData');
+    const dataDir = userDataPath;
+    
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    
+    databasePath = path.join(dataDir, 'timelogger.db');
+  }
+  
+  console.log('Portable Mode:', isPortableMode);
+  console.log('Database Path:', databasePath);
+}
 
 // Find available port
 function findAvailablePort(startPort) {
@@ -54,9 +98,9 @@ async function startBackend() {
       console.log('process.resourcesPath:', process.resourcesPath);
       console.log('Starting backend:', backendExe);
       console.log('API Port:', apiPort);
+      console.log('Database Path:', databasePath);
       
       // Check if backend exists
-      const fs = require('fs');
       if (!fs.existsSync(backendExe)) {
         console.error('Backend executable not found at:', backendExe);
         reject(new Error('Backend executable not found'));
@@ -66,7 +110,8 @@ async function startBackend() {
       backendProcess = spawn(backendExe, [], {
         env: {
           ...process.env,
-          ASPNETCORE_URLS: `http://localhost:${apiPort}`
+          ASPNETCORE_URLS: `http://localhost:${apiPort}`,
+          DATABASE_PATH: databasePath
         }
       });
 
@@ -108,7 +153,6 @@ function createWindow() {
   });
 
   const frontendPath = path.join(__dirname, 'frontend', 'index.html');
-  const fs = require('fs');
   const hasBuiltFrontend = fs.existsSync(frontendPath);
   
   if (!hasBuiltFrontend) {
@@ -130,6 +174,7 @@ function createWindow() {
 
 app.whenReady().then(async () => {
   try {
+    detectPortableModeAndSetupDatabase();
     await startBackend();
     createWindow();
 

@@ -48,6 +48,13 @@ Copy-Item -Path "$RootDir\Frontend\dist\*" -Destination "$RootDir\Electron\front
 Write-Host "Frontend copied successfully!" -ForegroundColor Green
 Write-Host ""
 
+Write-Host "Preparing database directories..." -ForegroundColor Yellow
+# Ensure Data directory exists in Electron for portable mode
+New-Item -ItemType Directory -Force -Path "$RootDir\Electron\Data" | Out-Null
+
+Write-Host "Database directories prepared!" -ForegroundColor Green
+Write-Host ""
+
 Write-Host "Installing Electron dependencies..." -ForegroundColor Yellow
 Set-Location "$RootDir\Electron"
 

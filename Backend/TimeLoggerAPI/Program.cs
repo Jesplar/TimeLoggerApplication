@@ -8,12 +8,32 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 
-// Configure SQL Server LocalDB database
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? "Server=(localdb)\\mssqllocaldb;Database=TimeLogger;Trusted_Connection=true;MultipleActiveResultSets=true";
+// Configure SQLite database
+// Priority: 1. DATABASE_PATH env var, 2. appsettings.json, 3. default to timelogger.db
+var databasePath = Environment.GetEnvironmentVariable("DATABASE_PATH");
+if (string.IsNullOrEmpty(databasePath))
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (!string.IsNullOrEmpty(connectionString) && connectionString.StartsWith("Data Source="))
+    {
+        databasePath = connectionString.Replace("Data Source=", "");
+    }
+    else
+    {
+        databasePath = "timelogger.db";
+    }
+}
 
+// Ensure database directory exists
+var dbDirectory = Path.GetDirectoryName(Path.GetFullPath(databasePath));
+if (!string.IsNullOrEmpty(dbDirectory) && !Directory.Exists(dbDirectory))
+{
+    Directory.CreateDirectory(dbDirectory);
+}
+
+var sqliteConnectionString = $"Data Source={databasePath}";
 builder.Services.AddDbContext<TimeLoggerContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlite(sqliteConnectionString));
 
 // Configure CORS for Electron renderer
 builder.Services.AddCors(options =>

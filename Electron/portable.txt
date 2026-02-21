@@ -1,0 +1,2 @@
+This marker file indicates portable mode.
+When this file exists, the database will be stored in the Data folder alongside the application.

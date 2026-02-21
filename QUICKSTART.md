@@ -1,104 +1,117 @@
-# 🚀 Quick Start Guide
+# 🚀 Time Logger - Quick Start Guide
 
-## Prerequisites Check
+## For End Users
 
-Before starting, verify you have these installed:
+### Installing Time Logger
+
+1. **Download** the installer: `Time Logger Setup 1.0.0.exe`
+2. **Run** the installer
+3. **Launch** from Start Menu
+
+Database location: `%LOCALAPPDATA%\TimeLogger\timelogger.db`
+
+### Using Portable Version
+
+1. **Download** `TimeLogger-1.0.0-portable.zip`
+2. **Extract** anywhere (USB drive, folder, etc.)
+3. **Run** `Time Logger.exe`
+
+Database location: `Data` folder in application directory
+
+### First Steps
+
+1. **Add Customer**: Manage tab → Customers → + Add Customer
+2. **Add Project**: Manage tab → Projects → + Add Project
+3. **Log Time**: Time Entries tab → + New Entry
+4. **Create Invoice**: Reports tab → Select dates → Export to Excel
+
+### Backup Your Data
+
+Copy `timelogger.db` file to safe location. Find location in: Settings → Database tab
+
+---
+
+## For Developers
+
+### Quick Development Setup
 
 ```powershell
-# Check Node.js (REQUIRED - if not installed, get it from https://nodejs.org/)
-node --version
+# 1. Install dependencies (first time only)
+cd Frontend
+npm install
+cd ..\Electron
+npm install
+cd ..
 
-# Check .NET (Already installed ✓)
-dotnet --version
-```
-
-## Three Simple Steps
-
-### 1️⃣ Setup (First Time Only)
-
-Run this once to install all dependencies:
-
-```powershell
-.\setup.ps1
-```
-
-This will:
-- Verify Node.js and .NET are installed
-- Install frontend dependencies (React, Vite, etc.)
-- Install Electron dependencies
-
-### 2️⃣ Build
-
-Build the complete application:
-
-```powershell
+# 2. Build and run
 .\build.ps1
-```
-
-This will:
-- Compile the C# backend
-- Build the React frontend  
-- Package everything for Electron
-
-### 3️⃣ Run
-
-Start the application:
-
-```powershell
 cd Electron
 npm start
 ```
 
-The Time Logger app will launch!
+### Create Installer/Portable Packages
 
-## What You'll See
+```powershell
+.\package.ps1
+```
 
-When the app starts, you'll see:
+Creates:
+- `Electron\dist\Time Logger Setup 1.0.0.exe` - Installer
+- `Electron\dist\TimeLogger-1.0.0-portable.zip` - Portable version
 
-1. **Weekly View Tab**: Your main workspace
-   - Weekly calendar with Monday start
-   - Time entries organized by day
-   - Project totals and weekly total
-   - Quick add/edit buttons
+### Development Workflow
 
-2. **Manage Tab**: Setup area
-   - Add/edit customers
-   - Add/edit projects
-   - Archive unused items
+1. Make changes in `Backend` or `Frontend`
+2. Run `.\build.ps1`
+3. Test with `cd Electron; npm start`
+4. Package with `.\package.ps1`
 
-## First-Time Usage
+### Scripts
 
-1. Go to **Manage** tab
-2. Add your first customer (e.g., "Acme Corp")
-3. Add a project for that customer (e.g., Project #2024-001)
-4. Go back to **Weekly View**
-5. Click **+ New Entry**
-6. Select customer, project, enter hours
-7. Click **Create**
+- `build.ps1` - Build backend + frontend + copy to Electron
+- `package.ps1` - Create installer and portable ZIP
 
-That's it! The app will remember your last-used customer and project for faster entry next time.
+### Database
 
-## Keyboard Tips
-
-- **Enter** = Save entry
-- **Esc** = Cancel dialog
-- **Tab** = Navigate between fields
-- Use "Today" and "Yesterday" buttons for quick date selection
-
-## Troubleshooting
-
-### "Node.js not found"
-Install Node.js from https://nodejs.org/
-
-### Build fails
-Make sure you ran `.\setup.ps1` first
-
-### Backend won't start
-Check if another app is using port 5000
-
-### Need help?
-Check the full README.md for detailed documentation
+- **Type**: SQLite (single file)
+- **Dev Location**: `Electron\Data\timelogger.db`
+- **Installed**: `%LOCALAPPDATA%\TimeLogger\timelogger.db`
+- **Portable**: `<AppFolder>\Data\timelogger.db`
 
 ---
 
-**Happy time tracking! ⏱️**
+## Troubleshooting
+
+### App Won't Start
+
+```powershell
+# Verify prerequisites
+node --version  # Should be 18+
+dotnet --version  # Should be 10+
+```
+
+### Database Issues
+
+- Check Settings → Database tab for location
+- Verify file permissions
+- Ensure file isn't locked
+
+### Changes Not Appearing (Dev)
+
+- Run `.\build.ps1`
+- Restart Electron
+- Hard refresh (Ctrl+Shift+R)
+
+---
+
+## Common Tasks
+
+**Backup**: Copy `timelogger.db` file
+
+**Restore**: Replace `timelogger.db` with backup (app closed)
+
+**Find Database**: Settings → Database → Location
+
+**Switch to Portable**: Create empty `portable.txt` file next to exe, restart app
+
+**Switch to Installed**: Delete `portable.txt`, restart app

@@ -23,14 +23,40 @@
       "main.js",
       "preload.js",
       "frontend/**/*",
-      "backend/**/*"
+      "backend/**/*",
+      "Data/.gitkeep"
+    ],
+    "extraResources": [
+      {
+        "from": "Data",
+        "to": "Data",
+        "filter": ["**/*"]
+      }
     ],
     "asarUnpack": [
       "backend/**/*"
     ],
     "win": {
-      "target": "nsis",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
       "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.exe"
     }
   }
 }
