@@ -290,7 +290,7 @@ label {
 }
 
 .table tr:hover {
-  background-color: #2a2a2a;
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .filters {
@@ -850,6 +850,19 @@ label {
     background-color: rgba(100, 108, 255, 0.1);
   }
   
+  .table th,
+  .table td {
+    border-bottom-color: #ddd;
+  }
+
+  .table th {
+    color: rgba(0, 0, 0, 0.5);
+  }
+
+  .table tr:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+  }
+
   .file-size {
     color: rgba(0, 0, 0, 0.5);
   }
