@@ -335,3 +335,28 @@ export const updateReceiptType = async (id: number, data: UpdateReceiptTypeDto):
 export const deleteReceiptType = async (id: number): Promise<void> => {
   await api.delete(`/receipttypes/${id}`);
 };
+
+// Database
+export const getDatabaseInfo = async (): Promise<{
+  path: string;
+  exists: boolean;
+  size: number;
+  sizeFormatted: string;
+  lastModified?: string;
+  mode: string;
+  isPortable: boolean;
+  provider: string;
+}> => {
+  const response = await api.get('/database/info');
+  return response.data;
+};
+
+export const getDatabaseLocation = async (): Promise<{ path: string; exists: boolean }> => {
+  const response = await api.get('/database/location');
+  return response.data;
+};
+
+export const getDatabaseMode = async (): Promise<{ mode: string; isPortable: boolean }> => {
+  const response = await api.get('/database/mode');
+  return response.data;
+};

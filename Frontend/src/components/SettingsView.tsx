@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, UpdateSettingsDto, TimeCode, CreateTimeCodeDto, UpdateTimeCodeDto, ReceiptType, CreateReceiptTypeDto, UpdateReceiptTypeDto } from '../types';
-import { getSettings, updateSettings, getTimeCodes, createTimeCode, updateTimeCode, deleteTimeCode, getReceiptTypes, createReceiptType, updateReceiptType, deleteReceiptType } from '../api';
+import { getSettings, updateSettings, getTimeCodes, createTimeCode, updateTimeCode, deleteTimeCode, getReceiptTypes, createReceiptType, updateReceiptType, deleteReceiptType, getDatabaseInfo } from '../api';
 
 export const SettingsView: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'general' | 'timecodes' | 'receipttypes'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'timecodes' | 'receipttypes' | 'database'>('general');
   
   // General settings state
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -30,10 +30,14 @@ export const SettingsView: React.FC = () => {
   const [newReceiptTypeIsActive, setNewReceiptTypeIsActive] = useState(true);
   const [showReceiptTypeForm, setShowReceiptTypeForm] = useState(false);
 
+  // Database state
+  const [databaseInfo, setDatabaseInfo] = useState<any>(null);
+
   useEffect(() => {
     loadSettings();
     loadTimeCodes();
     loadReceiptTypes();
+    loadDatabaseInfo();
   }, []);
 
   const loadSettings = async () => {
@@ -64,6 +68,15 @@ export const SettingsView: React.FC = () => {
       setReceiptTypes(data);
     } catch (err) {
       console.error('Failed to load receipt types', err);
+    }
+  };
+
+  const loadDatabaseInfo = async () => {
+    try {
+      const data = await getDatabaseInfo();
+      setDatabaseInfo(data);
+    } catch (err) {
+      console.error('Failed to load database info', err);
     }
   };
 
@@ -302,6 +315,12 @@ export const SettingsView: React.FC = () => {
           onClick={() => setActiveTab('receipttypes')}
         >
           Receipt Categories
+        </button>
+        <button
+          className={`tab ${activeTab === 'database' ? 'active' : ''}`}
+          onClick={() => setActiveTab('database')}
+        >
+          Database
         </button>
       </div>
 
@@ -563,6 +582,109 @@ export const SettingsView: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {activeTab === 'database' && (
+        <div className="database-section">
+          <p className="settings-description">
+            Database configuration and information
+          </p>
+
+          {databaseInfo ? (
+            <div className="database-info">
+              <div className="info-section">
+                <h3>Database Information</h3>
+                
+                <div className="info-row">
+                  <strong>Mode:</strong>
+                  <span className={`mode-badge ${databaseInfo.isPortable ? 'portable' : 'installed'}`}>
+                    {databaseInfo.mode}
+                  </span>
+                </div>
+
+                <div className="info-row">
+                  <strong>Provider:</strong>
+                  <span>{databaseInfo.provider}</span>
+                </div>
+
+                <div className="info-row">
+                  <strong>Status:</strong>
+                  <span className={databaseInfo.exists ? 'status-ok' : 'status-error'}>
+                    {databaseInfo.exists ? '✓ Connected' : '✗ Not Found'}
+                  </span>
+                </div>
+
+                {databaseInfo.exists && (
+                  <>
+                    <div className="info-row">
+                      <strong>Size:</strong>
+                      <span>{databaseInfo.sizeFormatted}</span>
+                    </div>
+
+                    {databaseInfo.lastModified && (
+                      <div className="info-row">
+                        <strong>Last Modified:</strong>
+                        <span>{new Date(databaseInfo.lastModified).toLocaleString()}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                <div className="info-row">
+                  <strong>Location:</strong>
+                  <div className="path-display">
+                    <code>{databaseInfo.path}</code>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(databaseInfo.path);
+                        setSuccessMessage('Path copied to clipboard!');
+                        setTimeout(() => setSuccessMessage(''), 2000);
+                      }}
+                      className="copy-button"
+                      title="Copy path to clipboard"
+                    >
+                      📋 Copy
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="info-section">
+                <h3>About Database Modes</h3>
+                <div>
+                  <p className="settings-description">
+                    <strong>Installed Mode:</strong> Database is stored in your user profile 
+                    ({'{AppData}'}/TimeLogger). Persists across application updates.
+                  </p>
+                  <p className="settings-description">
+                    <strong>Portable Mode:</strong> Database is stored alongside the application 
+                    in the Data folder. Perfect for USB drives or running without installation.
+                  </p>
+                  <p className="settings-description">
+                    <strong>Note:</strong> The mode is determined when the application starts 
+                    based on whether a portable.txt marker file exists in the application directory.
+                  </p>
+                </div>
+              </div>
+
+              <div className="info-section">
+                <h3>Backup</h3>
+                <div>
+                  <p className="settings-description">
+                    To backup your database, simply copy the file from the location shown above.
+                    The database is a single SQLite file that contains all your data.
+                  </p>
+                  <p className="settings-description">
+                    To restore a backup, replace the database file with your backup copy while 
+                    the application is closed.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div>Loading database information...</div>
+          )}
         </div>
       )}
     </div>
