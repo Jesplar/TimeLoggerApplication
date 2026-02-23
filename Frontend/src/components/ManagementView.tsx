@@ -17,7 +17,7 @@ export const ManagementView: React.FC = () => {
   useEffect(() => {
     loadCustomers();
     loadProjects();
-  }, [includeInactive]);
+  }, [includeInactive, activeTab]);
 
   const loadCustomers = async () => {
     setLoading(true);
@@ -201,6 +201,7 @@ export const ManagementView: React.FC = () => {
         onClose={() => setIsCustomerDialogOpen(false)}
         onSave={() => {
           loadCustomers();
+          loadProjects();
           setIsCustomerDialogOpen(false);
         }}
         customer={editingCustomer}
@@ -273,7 +274,7 @@ const CustomerDialog: React.FC<CustomerDialogProps> = ({ isOpen, onClose, onSave
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{customer ? 'Edit Customer' : 'New Customer'}</h2>
@@ -401,7 +402,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({ isOpen, onClose, onSave, 
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{project ? 'Edit Project' : 'New Project'}</h2>

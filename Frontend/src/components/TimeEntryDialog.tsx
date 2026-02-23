@@ -214,7 +214,7 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
+    <div className="modal-overlay">
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{editEntry ? 'Edit Time Entry' : 'New Time Entry'}</h2>

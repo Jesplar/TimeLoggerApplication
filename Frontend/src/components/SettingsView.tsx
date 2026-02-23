@@ -438,50 +438,6 @@ export const SettingsView: React.FC = () => {
             </button>
           </div>
 
-          {showTimeCodeForm && (
-            <div className="form-card" style={{ marginBottom: '1.5rem' }}>
-              <h3>{editingTimeCode ? 'Edit Time Code' : 'New Time Code'}</h3>
-              <div className="form-group">
-                <label>Code</label>
-                <input
-                  type="text"
-                  value={newTimeCodeCode}
-                  onChange={(e) => setNewTimeCodeCode(e.target.value)}
-                  placeholder="e.g., 500"
-                />
-              </div>
-              <div className="form-group">
-                <label>Description</label>
-                <input
-                  type="text"
-                  value={newTimeCodeDescription}
-                  onChange={(e) => setNewTimeCodeDescription(e.target.value)}
-                  placeholder="e.g., Regular Work"
-                />
-              </div>
-              {editingTimeCode && (
-                <div className="form-group">
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <input
-                      type="checkbox"
-                      checked={newTimeCodeIsActive}
-                      onChange={(e) => setNewTimeCodeIsActive(e.target.checked)}
-                    />
-                    Active
-                  </label>
-                </div>
-              )}
-              <div className="form-actions">
-                <button onClick={handleCancelTimeCode} disabled={loading}>
-                  Cancel
-                </button>
-                <button onClick={handleSaveTimeCode} className="primary" disabled={loading}>
-                  {loading ? 'Saving...' : 'Save'}
-                </button>
-              </div>
-            </div>
-          )}
-
           <table className="table">
             <thead>
               <tr>
@@ -732,6 +688,56 @@ export const SettingsView: React.FC = () => {
           ) : (
             <div>Loading database information...</div>
           )}
+        </div>
+      )}
+      {showTimeCodeForm && (
+        <div className="modal-overlay">
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{editingTimeCode ? 'Edit Time Code' : 'New Time Code'}</h2>
+              <button onClick={handleCancelTimeCode}>✕</button>
+            </div>
+            <div className="form-group">
+              <label>Code</label>
+              <input
+                type="number"
+                value={newTimeCodeCode}
+                onChange={(e) => setNewTimeCodeCode(e.target.value)}
+                placeholder="e.g., 500"
+                autoFocus
+              />
+            </div>
+            <div className="form-group">
+              <label>Description</label>
+              <input
+                type="text"
+                value={newTimeCodeDescription}
+                onChange={(e) => setNewTimeCodeDescription(e.target.value)}
+                placeholder="e.g., Regular Work"
+              />
+            </div>
+            {editingTimeCode && (
+              <div className="form-group">
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <input
+                    type="checkbox"
+                    checked={newTimeCodeIsActive}
+                    onChange={(e) => setNewTimeCodeIsActive(e.target.checked)}
+                  />
+                  Active
+                </label>
+              </div>
+            )}
+            {error && <div className="error">{error}</div>}
+            <div className="modal-footer">
+              <button onClick={handleCancelTimeCode} disabled={loading}>
+                Cancel
+              </button>
+              <button onClick={handleSaveTimeCode} className="primary" disabled={loading}>
+                {loading ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

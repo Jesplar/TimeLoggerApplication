@@ -218,7 +218,7 @@ export const ReceiptDialog: React.FC<ReceiptDialogProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleCancel}>
+    <div className="modal-overlay">
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h2>{editReceipt ? 'Edit Receipt' : 'Add Receipt'}</h2>
 
