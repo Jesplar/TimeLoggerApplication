@@ -211,6 +211,7 @@ export const WeeklyView: React.FC = () => {
             </div>
           </div>
 
+          <div style={{ overflowX: 'auto' }}>
           <div className="week-grid">
             {summary.days.map((day, index) => {
               const dayDate = weekDays[index];
@@ -276,6 +277,7 @@ export const WeeklyView: React.FC = () => {
                 </div>
               );
             })}
+          </div>
           </div>
         </>
       ) : null}

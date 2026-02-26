@@ -84,10 +84,10 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
   }, [editEntry, isOpen, lastUsedCustomerId, lastUsedProjectId, initialDate]);
 
   useEffect(() => {
-    if (selectedCustomerId) {
+    if (selectedCustomerId && isOpen) {
       loadProjects(selectedCustomerId);
     }
-  }, [selectedCustomerId]);
+  }, [selectedCustomerId, isOpen]);
 
   const loadCustomers = async () => {
     try {
@@ -112,12 +112,18 @@ export const TimeEntryDialog: React.FC<TimeEntryDialogProps> = ({
       const data = await getProjects(customerId);
       setProjects(data);
       
-      if (!editEntry && data.length > 0 && !selectedProjectId) {
-        const defaultProject = lastUsedProjectId 
-          ? data.find(p => p.id === lastUsedProjectId) 
-          : data[0];
-        if (defaultProject) {
-          setSelectedProjectId(defaultProject.id);
+      if (!editEntry) {
+        const activeProjects = data.filter(p => p.isActive);
+        if (activeProjects.length === 1) {
+          // Exactly one active project for this customer – auto-select it
+          setSelectedProjectId(activeProjects[0].id);
+        } else if (data.length > 0 && !selectedProjectId) {
+          const defaultProject = lastUsedProjectId 
+            ? data.find(p => p.id === lastUsedProjectId) 
+            : data[0];
+          if (defaultProject) {
+            setSelectedProjectId(defaultProject.id);
+          }
         }
       }
     } catch (err) {

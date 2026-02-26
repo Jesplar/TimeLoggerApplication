@@ -173,6 +173,8 @@ label {
 
 .week-grid {
   display: grid;
+  grid-template-columns: repeat(7, minmax(130px, 1fr));
+  align-items: start;
   gap: 0.5rem;
   margin-bottom: 1rem;
 }
@@ -181,12 +183,15 @@ label {
   background-color: #2a2a2a;
   border-radius: 6px;
   padding: 0.5rem;
+  min-width: 0;
 }
 
 .day-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 0.25rem;
   margin-bottom: 0.35rem;
   padding-bottom: 0.35rem;
   border-bottom: 1px solid #444;
