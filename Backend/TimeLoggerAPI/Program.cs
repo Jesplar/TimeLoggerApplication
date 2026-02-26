@@ -48,23 +48,53 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Ensure database exists (use CanConnect instead of EnsureCreated for existing databases)
+// Ensure database is created and up to date.
+// Handles three cases:
+//   1. Brand new database         → MigrateAsync creates everything from scratch
+//   2. EnsureCreated legacy DB    → schema exists but __EFMigrationsHistory is missing or empty;
+//                                   stamp InitialCreate so MigrateAsync doesn't try to re-create tables
+//   3. Already-migrated database  → MigrateAsync is a no-op
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<TimeLoggerContext>();
-    try
+    var conn = context.Database.GetDbConnection();
+    await conn.OpenAsync();
+
+    // Check whether the schema already exists (Customers table is a reliable indicator)
+    using var schemaCmd = conn.CreateCommand();
+    schemaCmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Customers'";
+    var schemaExists = (long)(await schemaCmd.ExecuteScalarAsync() ?? 0L) > 0;
+
+    if (schemaExists)
     {
-        // Try to connect - if it fails, create the database
-        if (!context.Database.CanConnect())
+        // Schema was created by EnsureCreated (or a previous install). Ensure the migrations
+        // history table exists and that InitialCreate is stamped so MigrateAsync won't
+        // try to re-create tables that are already there.
+        using var createHistoryCmd = conn.CreateCommand();
+        createHistoryCmd.CommandText = """
+            CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
+                "MigrationId" TEXT NOT NULL CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY,
+                "ProductVersion" TEXT NOT NULL
+            )
+            """;
+        await createHistoryCmd.ExecuteNonQueryAsync();
+
+        using var checkStampCmd = conn.CreateCommand();
+        checkStampCmd.CommandText = "SELECT COUNT(*) FROM __EFMigrationsHistory WHERE MigrationId = '20260220183348_InitialCreate'";
+        var alreadyStamped = (long)(await checkStampCmd.ExecuteScalarAsync() ?? 0L) > 0;
+
+        if (!alreadyStamped)
         {
-            context.Database.EnsureCreated();
+            using var stampCmd = conn.CreateCommand();
+            stampCmd.CommandText = "INSERT INTO __EFMigrationsHistory (MigrationId, ProductVersion) VALUES ('20260220183348_InitialCreate', '10.0.0')";
+            await stampCmd.ExecuteNonQueryAsync();
         }
     }
-    catch
-    {
-        // If connection fails, try to create
-        context.Database.EnsureCreated();
-    }
+
+    await conn.CloseAsync();
+
+    // Now safe — applies only migrations newer than what is already stamped
+    await context.Database.MigrateAsync();
 }
 
 // Configure the HTTP request pipeline
