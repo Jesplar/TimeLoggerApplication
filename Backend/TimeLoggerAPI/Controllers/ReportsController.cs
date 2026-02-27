@@ -114,7 +114,8 @@ public class ReportsController : ControllerBase
         var query = _context.TimeEntries
             .Include(te => te.Project)
             .ThenInclude(p => p.Customer)
-            .Where(te => te.Date >= startDate && te.Date <= endDate);
+            .Include(te => te.TimeCode)
+            .Where(te => te.Date >= startDate && te.Date <= endDate && !te.Project.ExcludeFromInvoice);
 
         if (customerId.HasValue)
         {
@@ -133,6 +134,8 @@ public class ReportsController : ControllerBase
             Customer = te.Project.Customer.Name,
             ProjectNumber = te.Project.ProjectNumber,
             ProjectName = te.Project.Name,
+            TimeCode = te.TimeCode.Code,
+            TimeCodeDescription = te.TimeCode.Description,
             Hours = CalculateHours(te.Hours, te.StartTime, te.EndTime),
             IsOnSite = te.IsOnSite,
             TravelHours = (double)(te.TravelHours ?? 0),
@@ -162,7 +165,7 @@ public class ReportsController : ControllerBase
             .Include(te => te.Project)
             .ThenInclude(p => p.Customer)
             .Include(te => te.TimeCode)
-            .Where(te => te.Date >= startDate && te.Date <= endDate);
+            .Where(te => te.Date >= startDate && te.Date <= endDate && !te.Project.ExcludeFromInvoice);
 
         if (customerId.HasValue)
         {

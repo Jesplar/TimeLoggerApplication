@@ -12,6 +12,7 @@ export interface Project {
   projectNumber: string;
   name: string;
   isActive: boolean;
+  excludeFromInvoice: boolean;
   createdDate: string;
 }
 
@@ -49,6 +50,7 @@ export interface TimeEntry {
   endTime?: string;
   description?: string;
   isOnSite: boolean;
+  excludeFromInvoice: boolean;
   travelHours?: number;
   travelKm?: number;
   createdDate: string;
@@ -111,6 +113,7 @@ export interface UpdateProjectDto {
   projectNumber: string;
   name: string;
   isActive: boolean;
+  excludeFromInvoice: boolean;
 }
 
 // Report Types

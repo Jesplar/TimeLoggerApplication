@@ -181,6 +181,11 @@ export const ManagementView: React.FC = () => {
                     {project.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </td>
+                <td>
+                  <span style={{ color: project.excludeFromInvoice ? '#f57c00' : '#888', fontSize: '0.85em' }}>
+                    {project.excludeFromInvoice ? 'Internal' : 'Billable'}
+                  </span>
+                </td>
                 <td>{new Date(project.createdDate).toLocaleDateString()}</td>
                 <td>
                   <button onClick={() => handleEditProject(project)} style={{ marginRight: '0.5rem' }}>
@@ -336,6 +341,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({ isOpen, onClose, onSave, 
   const [projectNumber, setProjectNumber] = useState('');
   const [name, setName] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [excludeFromInvoice, setExcludeFromInvoice] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -345,11 +351,13 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({ isOpen, onClose, onSave, 
       setProjectNumber(project.projectNumber);
       setName(project.name);
       setIsActive(project.isActive);
+      setExcludeFromInvoice(project.excludeFromInvoice);
     } else {
       setCustomerId(customers.length > 0 ? customers[0].id : null);
       setProjectNumber('');
       setName('');
       setIsActive(true);
+      setExcludeFromInvoice(false);
     }
     setError('');
   }, [project, isOpen, customers]);
@@ -381,6 +389,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({ isOpen, onClose, onSave, 
           projectNumber: projectNumber.trim(),
           name: name.trim(),
           isActive,
+          excludeFromInvoice,
         };
         await updateProject(project.id, updateDto);
       } else {
@@ -462,6 +471,17 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({ isOpen, onClose, onSave, 
               </label>
             </div>
           )}
+
+          <div className="form-group">
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input
+                type="checkbox"
+                checked={excludeFromInvoice}
+                onChange={(e) => setExcludeFromInvoice(e.target.checked)}
+              />
+              Internal — Exclude from Invoice Reports
+            </label>
+          </div>
 
           {error && <div className="error">{error}</div>}
 

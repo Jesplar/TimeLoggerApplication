@@ -4,6 +4,7 @@ import { getWeeklySummary, getCustomers, getProjects, deleteTimeEntry, exportTim
 import { getWeekStart, getWeekDays, formatDate, formatDisplayDate, todayDate } from '../utils/dateUtils';
 import { addWeeks } from 'date-fns';
 import { TimeEntryDialog } from './TimeEntryDialog';
+import { BulkTimeEntryDialog } from './BulkTimeEntryDialog';
 
 export const WeeklyView: React.FC = () => {
   const [currentWeekStart, setCurrentWeekStart] = useState(getWeekStart(todayDate()));
@@ -18,6 +19,7 @@ export const WeeklyView: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [newEntryDate, setNewEntryDate] = useState<Date | undefined>();
+  const [isBulkDialogOpen, setIsBulkDialogOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -136,9 +138,14 @@ export const WeeklyView: React.FC = () => {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h2>Weekly Overview</h2>
-        <button className="primary" onClick={() => handleAddEntry()}>
-          + New Entry
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button className="primary" onClick={() => handleAddEntry()}>
+            + New Entry
+          </button>
+          <button onClick={() => setIsBulkDialogOpen(true)}>
+            ⚡ Quick Register Week
+          </button>
+        </div>
       </div>
 
       <div className="toolbar">
@@ -288,6 +295,13 @@ export const WeeklyView: React.FC = () => {
         onSave={handleDialogSave}
         editEntry={editingEntry}
         initialDate={newEntryDate}
+      />
+
+      <BulkTimeEntryDialog
+        isOpen={isBulkDialogOpen}
+        onClose={() => setIsBulkDialogOpen(false)}
+        onSave={loadData}
+        initialWeekStart={currentWeekStart}
       />
     </div>
   );
