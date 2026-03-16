@@ -1,6 +1,6 @@
 {
   "name": "timelogger-electron",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Time Logger Desktop Application",
   "main": "main.js",
   "scripts": {
