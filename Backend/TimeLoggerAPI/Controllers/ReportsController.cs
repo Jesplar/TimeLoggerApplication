@@ -165,7 +165,7 @@ public class ReportsController : ControllerBase
             .Include(te => te.Project)
             .ThenInclude(p => p.Customer)
             .Include(te => te.TimeCode)
-            .Where(te => te.Date >= startDate && te.Date <= endDate && !te.Project.ExcludeFromInvoice);
+            .Where(te => te.Date >= startDate && te.Date <= endDate);
 
         if (customerId.HasValue)
         {
@@ -297,6 +297,9 @@ public class ReportsController : ControllerBase
                     TravelDistanceCost = travelDistanceCost,
                     ReceiptsCost = receiptsCost,
                     GrandTotal = regularCost + onSiteCost + travelTimeCost + travelDistanceCost + receiptsCost,
+                    
+                    IsHotlineProject = project.IsHotlineProject,
+                    ExcludeFromInvoice = project.ExcludeFromInvoice,
                     
                     Entries = projectEntries.Select(te => new InvoiceReportDto
                     {

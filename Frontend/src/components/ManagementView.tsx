@@ -185,6 +185,9 @@ export const ManagementView: React.FC = () => {
                   <span style={{ color: project.excludeFromInvoice ? '#f57c00' : '#888', fontSize: '0.85em' }}>
                     {project.excludeFromInvoice ? 'Internal' : 'Billable'}
                   </span>
+                  {project.isHotlineProject && (
+                    <span style={{ color: '#7b1fa2', fontSize: '0.85em', marginLeft: '0.4rem' }}>Hotline</span>
+                  )}
                 </td>
                 <td>{new Date(project.createdDate).toLocaleDateString()}</td>
                 <td>
@@ -342,6 +345,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({ isOpen, onClose, onSave, 
   const [name, setName] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [excludeFromInvoice, setExcludeFromInvoice] = useState(false);
+  const [isHotlineProject, setIsHotlineProject] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -352,15 +356,18 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({ isOpen, onClose, onSave, 
       setName(project.name);
       setIsActive(project.isActive);
       setExcludeFromInvoice(project.excludeFromInvoice);
+      setIsHotlineProject(project.isHotlineProject);
     } else {
       setCustomerId(customers.length > 0 ? customers[0].id : null);
       setProjectNumber('');
       setName('');
       setIsActive(true);
       setExcludeFromInvoice(false);
+      setIsHotlineProject(false);
     }
     setError('');
-  }, [project, isOpen, customers]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -390,6 +397,7 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({ isOpen, onClose, onSave, 
           name: name.trim(),
           isActive,
           excludeFromInvoice,
+          isHotlineProject,
         };
         await updateProject(project.id, updateDto);
       } else {
@@ -397,6 +405,8 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({ isOpen, onClose, onSave, 
           customerId,
           projectNumber: projectNumber.trim(),
           name: name.trim(),
+          excludeFromInvoice,
+          isHotlineProject,
         };
         await createProject(createDto);
       }
@@ -480,6 +490,17 @@ const ProjectDialog: React.FC<ProjectDialogProps> = ({ isOpen, onClose, onSave, 
                 onChange={(e) => setExcludeFromInvoice(e.target.checked)}
               />
               Internal — Exclude from Invoice Reports
+            </label>
+          </div>
+
+          <div className="form-group">
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input
+                type="checkbox"
+                checked={isHotlineProject}
+                onChange={(e) => setIsHotlineProject(e.target.checked)}
+              />
+              Hotline Project
             </label>
           </div>
 

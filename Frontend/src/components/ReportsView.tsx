@@ -39,6 +39,7 @@ interface ReportOption {
   requiresWeek?: boolean;
   requiresYear?: boolean;
   allowsCustomerFilter?: boolean;
+  hidden?: boolean;
 }
 
 const reportOptions: ReportOption[] = [
@@ -47,6 +48,7 @@ const reportOptions: ReportOption[] = [
     label: 'Monthly Summary by Customer',
     description: 'Total hours per customer for a specific month',
     requiresMonth: true,
+    hidden: true,
   },
   {
     value: 'monthly-project',
@@ -54,6 +56,7 @@ const reportOptions: ReportOption[] = [
     description: 'Detailed breakdown by project for invoicing',
     requiresMonth: true,
     allowsCustomerFilter: true,
+    hidden: true,
   },
   {
     value: 'invoice',
@@ -73,22 +76,26 @@ const reportOptions: ReportOption[] = [
     label: 'Customer Activity Report',
     description: 'Customer engagement over a date range',
     requiresDateRange: true,
+    hidden: true,
   },
   {
     value: 'project-status',
     label: 'Project Status Report',
     description: 'Overview of all projects with recent activity',
+    hidden: true,
   },
   {
     value: 'ytd-summary',
     label: 'Year-to-Date Summary',
     description: 'Annual performance metrics',
     requiresYear: true,
+    hidden: true,
   },
   {
     value: 'monthly-comparison',
     label: 'Month-by-Month Comparison',
     description: 'Track trends over the last 6 months',
+    hidden: true,
   },
 ];
 
@@ -284,63 +291,87 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
         // Empty row
         currentRow++;
         
-        // Cost breakdown header row - BOLD
-        const headerRow = worksheet.getRow(currentRow);
-        headerRow.values = ['', 'Regular Hours', 'On-Site Hours', 'Travel Time', 'Travel Distance'];
-        headerRow.font = { bold: true };
-        currentRow++;
-        
-        // Hours/Km row
-        worksheet.getRow(currentRow).values = [
-          'Hours/Km',
-          project.regularHours,
-          project.onSiteHours,
-          project.travelHours,
-          project.travelKm
-        ];
-        currentRow++;
-        
-        // Rate row
-        worksheet.getRow(currentRow).values = [
-          'Rate (€)',
-          project.hourlyRate,
-          project.hourlyRate,
-          project.travelHourlyRate,
-          project.kmCost
-        ];
-        currentRow++;
-        
-        // Total row with formulas - BOLD
-        const totalRow = worksheet.getRow(currentRow);
-        totalRow.getCell(1).value = 'Total (€)';
-        totalRow.getCell(2).value = { formula: `B${currentRow-1}*B${currentRow}` };
-        totalRow.getCell(3).value = { formula: `C${currentRow-1}*C${currentRow}` };
-        totalRow.getCell(4).value = { formula: `D${currentRow-1}*D${currentRow}` };
-        totalRow.getCell(5).value = { formula: `E${currentRow-1}*E${currentRow}` };
-        totalRow.font = { bold: true };
-        currentRow++;
-        
-        // Empty row
-        currentRow++;
-        
-        // Detailed entries header - BOLD
-        const detailHeaderRow = worksheet.getRow(currentRow);
-        detailHeaderRow.values = ['Date', 'Description', 'Hours', 'On-Site', 'Travel Hrs', 'Travel Km'];
-        detailHeaderRow.font = { bold: true };
-        currentRow++;
-        
-        // Detailed entries
-        project.entries.forEach(entry => {
+        if (project.isHotlineProject) {
+          // Hotline: show individual entries with timecode and cost per entry
+          const entryHeaderRow = worksheet.getRow(currentRow);
+          entryHeaderRow.values = ['Date', 'Time Code', 'Description', 'Hours', 'Work Type', 'Travel Hrs', 'Travel Km', 'Cost (€)'];
+          entryHeaderRow.font = { bold: true };
+          currentRow++;
+          
+          project.entries.forEach(entry => {
+            const entryCost = entry.hours * Number(project.hourlyRate);
+            worksheet.getRow(currentRow).values = [
+              format(new Date(entry.date), 'yyyy-MM-dd'),
+              `${entry.timeCode} - ${entry.timeCodeDescription}`,
+              entry.description || '',
+              entry.hours,
+              entry.isOnSite ? 'On-Site' : 'Regular',
+              entry.travelHours || 0,
+              entry.travelKm || 0,
+              entryCost.toFixed(2)
+            ];
+            currentRow++;
+          });
+        } else {
+          // Regular project: cost breakdown summary + entry list
+          // Cost breakdown header row - BOLD
+          const headerRow = worksheet.getRow(currentRow);
+          headerRow.values = ['', 'Regular Hours', 'On-Site Hours', 'Travel Time', 'Travel Distance'];
+          headerRow.font = { bold: true };
+          currentRow++;
+          
+          // Hours/Km row
           worksheet.getRow(currentRow).values = [
-            format(new Date(entry.date), 'yyyy-MM-dd'),
-            entry.description || '',
-            entry.hours,
-            entry.isOnSite ? 'Yes' : 'No',
-            entry.travelHours || 0,
-            entry.travelKm || 0
+            'Hours/Km',
+            project.regularHours,
+            project.onSiteHours,
+            project.travelHours,
+            project.travelKm
           ];
           currentRow++;
-        });
+          
+          // Rate row
+          worksheet.getRow(currentRow).values = [
+            'Rate (€)',
+            project.hourlyRate,
+            project.hourlyRate,
+            project.travelHourlyRate,
+            project.kmCost
+          ];
+          currentRow++;
+          
+          // Total row with formulas - BOLD
+          const totalRow = worksheet.getRow(currentRow);
+          totalRow.getCell(1).value = 'Total (€)';
+          totalRow.getCell(2).value = { formula: `B${currentRow-1}*B${currentRow}` };
+          totalRow.getCell(3).value = { formula: `C${currentRow-1}*C${currentRow}` };
+          totalRow.getCell(4).value = { formula: `D${currentRow-1}*D${currentRow}` };
+          totalRow.getCell(5).value = { formula: `E${currentRow-1}*E${currentRow}` };
+          totalRow.font = { bold: true };
+          currentRow++;
+          
+          // Empty row
+          currentRow++;
+          
+          // Detailed entries header - BOLD
+          const detailHeaderRow = worksheet.getRow(currentRow);
+          detailHeaderRow.values = ['Date', 'Description', 'Hours', 'On-Site', 'Travel Hrs', 'Travel Km'];
+          detailHeaderRow.font = { bold: true };
+          currentRow++;
+          
+          // Detailed entries
+          project.entries.forEach(entry => {
+            worksheet.getRow(currentRow).values = [
+              format(new Date(entry.date), 'yyyy-MM-dd'),
+              entry.description || '',
+              entry.hours,
+              entry.isOnSite ? 'Yes' : 'No',
+              entry.travelHours || 0,
+              entry.travelKm || 0
+            ];
+            currentRow++;
+          });
+        }
         
         // Empty row
         currentRow++;
@@ -395,11 +426,11 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
         
         // Set column widths
         worksheet.columns = [
-          { width: 20 },
-          { width: 25 },
+          { width: 30 },
+          { width: 35 },
           { width: 30 },
           { width: 10 },
-          { width: 12 },
+          { width: 15 },
           { width: 12 },
           { width: 15 },
         ];
@@ -424,58 +455,124 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
         // Empty row
         currentRow++;
         
-        // Regular Hours Section with Time Code breakdown
-        if (project.regularHours > 0) {
+        if (project.isHotlineProject) {
+          // Hotline: show individual entries instead of timecode-grouped sections
           row = worksheet.getRow(currentRow);
-          row.values = ['═══ REGULAR HOURS ═══', '', '', '', '', ''];
+          row.values = ['═══ TIME ENTRIES ═══', '', '', '', '', ''];
           row.font = { bold: true };
           currentRow++;
           
-          project.regularHoursByTimeCode.forEach(tc => {
+          row = worksheet.getRow(currentRow);
+          row.values = ['Date', 'Time Code', 'Description', 'Hours', 'Rate', 'Cost (€)'];
+          row.font = { bold: true };
+          currentRow++;
+          
+          project.entries.forEach(entry => {
+            const entryCost = entry.hours * Number(project.hourlyRate);
             worksheet.getRow(currentRow).values = [
-              `${tc.timeCode} - ${tc.timeCodeDescription}:`,
-              `${tc.hours} hours`,
-              'Rate:',
+              format(new Date(entry.date), 'EEE, MMM dd, yyyy'),
+              `${entry.timeCode} - ${entry.timeCodeDescription}`,
+              entry.description || '',
+              entry.hours.toFixed(2),
               `€${project.hourlyRate}`,
-              'Total:',
-              `€${tc.cost.toFixed(2)}`
+              `€${entryCost.toFixed(2)}`
             ];
             currentRow++;
           });
           
+          const totalHours = project.regularHours + project.onSiteHours;
+          const totalHoursCost = project.regularCost + project.onSiteCost;
           row = worksheet.getRow(currentRow);
-          row.values = ['REGULAR SUBTOTAL:', `${project.regularHours} hours`, '', '', 'Total:', `€${project.regularCost.toFixed(2)}`];
+          row.values = ['HOURS SUBTOTAL:', `${totalHours.toFixed(2)} hours`, '', '', 'Total:', `€${totalHoursCost.toFixed(2)}`];
           row.font = { bold: true };
           currentRow++;
           
           currentRow++;
         }
-        
-        // On-Site Hours Section with Time Code breakdown
-        if (project.onSiteHours > 0) {
-          row = worksheet.getRow(currentRow);
-          row.values = ['═══ ON-SITE HOURS ═══', '', '', '', '', ''];
+        else if (project.excludeFromInvoice) {
+                    row = worksheet.getRow(currentRow);
+          row.values = ['═══ TIME ENTRIES ═══', '', '', '', '', ''];
           row.font = { bold: true };
           currentRow++;
           
-          project.onSiteHoursByTimeCode.forEach(tc => {
+          row = worksheet.getRow(currentRow);
+          row.values = ['Date', 'Time Code', 'Description', 'Hours'];
+          row.font = { bold: true };
+          currentRow++;
+          
+          project.entries.forEach(entry => {
             worksheet.getRow(currentRow).values = [
-              `${tc.timeCode} - ${tc.timeCodeDescription}:`,
-              `${tc.hours} hours`,
-              'Rate:',
-              `€${project.hourlyRate}`,
-              'Total:',
-              `€${tc.cost.toFixed(2)}`
+              format(new Date(entry.date), 'EEE, MMM dd, yyyy'),
+              `${entry.timeCode} - ${entry.timeCodeDescription}`,
+              entry.description || '(no description)',
+              entry.hours.toFixed(2)
             ];
             currentRow++;
           });
           
+          const totalHours = project.regularHours + project.onSiteHours;
           row = worksheet.getRow(currentRow);
-          row.values = ['ON-SITE SUBTOTAL:', `${project.onSiteHours} hours`, '', '', 'Total:', `€${project.onSiteCost.toFixed(2)}`];
+          row.values = ['HOURS SUBTOTAL:', `${totalHours.toFixed(2)} hours`, '', ''];
           row.font = { bold: true };
           currentRow++;
           
           currentRow++;
+        }
+        else {
+          // Regular project: group hours by timecode
+          // Regular Hours Section with Time Code breakdown
+          if (project.regularHours > 0) {
+            row = worksheet.getRow(currentRow);
+            row.values = ['═══ REGULAR HOURS ═══', '', '', '', '', ''];
+            row.font = { bold: true };
+            currentRow++;
+            
+            project.regularHoursByTimeCode.forEach(tc => {
+              worksheet.getRow(currentRow).values = [
+                `${tc.timeCode} - ${tc.timeCodeDescription}:`,
+                `${tc.hours} hours`,
+                'Rate:',
+                `€${project.hourlyRate}`,
+                'Total:',
+                `€${tc.cost.toFixed(2)}`
+              ];
+              currentRow++;
+            });
+            
+            row = worksheet.getRow(currentRow);
+            row.values = ['REGULAR SUBTOTAL:', `${project.regularHours} hours`, '', '', 'Total:', `€${project.regularCost.toFixed(2)}`];
+            row.font = { bold: true };
+            currentRow++;
+            
+            currentRow++;
+          }
+          
+          // On-Site Hours Section with Time Code breakdown
+          if (project.onSiteHours > 0) {
+            row = worksheet.getRow(currentRow);
+            row.values = ['═══ ON-SITE HOURS ═══', '', '', '', '', ''];
+            row.font = { bold: true };
+            currentRow++;
+            
+            project.onSiteHoursByTimeCode.forEach(tc => {
+              worksheet.getRow(currentRow).values = [
+                `${tc.timeCode} - ${tc.timeCodeDescription}:`,
+                `${tc.hours} hours`,
+                'Rate:',
+                `€${project.hourlyRate}`,
+                'Total:',
+                `€${tc.cost.toFixed(2)}`
+              ];
+              currentRow++;
+            });
+            
+            row = worksheet.getRow(currentRow);
+            row.values = ['ON-SITE SUBTOTAL:', `${project.onSiteHours} hours`, '', '', 'Total:', `€${project.onSiteCost.toFixed(2)}`];
+            row.font = { bold: true };
+            currentRow++;
+            
+            currentRow++;
+          }
         }
         
         // Travel Section
@@ -541,14 +638,18 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
         }
         
         // Total - BOLD
-        row = worksheet.getRow(currentRow);
-        row.values = ['', '', '', '', 'PROJECT TOTAL:', `€${project.grandTotal.toFixed(2)}`];
-        row.font = { bold: true };
-        currentRow++;
+        if (!project.excludeFromInvoice){
+          row = worksheet.getRow(currentRow);
+          row.values = ['', '', '', '', 'PROJECT TOTAL:', `€${project.grandTotal.toFixed(2)}`];
+          row.font = { bold: true };
+          currentRow++;
+        }
         
         currentRow += 2;
         
         // Detailed entries
+        // Not needed for hotline projects
+        if (!project.isHotlineProject) {
         row = worksheet.getRow(currentRow);
         row.values = ['═══ TIME ENTRY DETAILS ═══', '', '', '', '', '', ''];
         row.font = { bold: true };
@@ -571,6 +672,7 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
           ];
           currentRow++;
         });
+      }
       });
       
       const timestamp = format(new Date(), 'yyyy-MM-dd-HHmmss');
@@ -759,7 +861,7 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
               setReportData(null);
             }}
           >
-            {reportOptions.map(option => (
+            {reportOptions.filter(option => !option.hidden).map(option => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>

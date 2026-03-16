@@ -147,6 +147,10 @@ public class InvoiceExportProjectDto
     public decimal ReceiptsCost { get; set; }
     public decimal GrandTotal { get; set; }
     
+    // Whether this is a hotline project (entries shown individually, not summarized by timecode)
+    public bool IsHotlineProject { get; set; }
+    public bool ExcludeFromInvoice { get; set; }
+
     // Detailed entries for this project
     public List<InvoiceReportDto> Entries { get; set; } = new();
     

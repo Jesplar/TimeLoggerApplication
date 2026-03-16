@@ -8,6 +8,7 @@ public class Project
     public string Name { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
     public bool ExcludeFromInvoice { get; set; } = false;
+    public bool IsHotlineProject { get; set; } = false;
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
     
     // Navigation properties

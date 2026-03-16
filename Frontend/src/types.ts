@@ -13,6 +13,7 @@ export interface Project {
   name: string;
   isActive: boolean;
   excludeFromInvoice: boolean;
+  isHotlineProject: boolean;
   createdDate: string;
 }
 
@@ -106,6 +107,8 @@ export interface CreateProjectDto {
   customerId: number;
   projectNumber: string;
   name: string;
+  excludeFromInvoice: boolean;
+  isHotlineProject: boolean;
 }
 
 export interface UpdateProjectDto {
@@ -114,6 +117,7 @@ export interface UpdateProjectDto {
   name: string;
   isActive: boolean;
   excludeFromInvoice: boolean;
+  isHotlineProject: boolean;
 }
 
 // Report Types
@@ -275,6 +279,8 @@ export interface InvoiceExportProject {
   receiptsCost: number;
   grandTotal: number;
   
+  isHotlineProject: boolean;
+  excludeFromInvoice: boolean;
   entries: InvoiceReport[];
   receipts: InvoiceReceipt[];
 }

@@ -44,6 +44,7 @@ public class ProjectsController : ControllerBase
                 Name = p.Name,
                 IsActive = p.IsActive,
                 ExcludeFromInvoice = p.ExcludeFromInvoice,
+                IsHotlineProject = p.IsHotlineProject,
                 CreatedDate = p.CreatedDate
             })
             .ToListAsync();
@@ -72,6 +73,7 @@ public class ProjectsController : ControllerBase
             Name = project.Name,
             IsActive = project.IsActive,
             ExcludeFromInvoice = project.ExcludeFromInvoice,
+            IsHotlineProject = project.IsHotlineProject,
             CreatedDate = project.CreatedDate
         };
 
@@ -112,7 +114,9 @@ public class ProjectsController : ControllerBase
             ProjectNumber = createDto.ProjectNumber.Trim(),
             Name = createDto.Name.Trim(),
             IsActive = true,
-            CreatedDate = DateTime.UtcNow
+            CreatedDate = DateTime.UtcNow,
+            ExcludeFromInvoice = createDto.ExcludeFromInvoice,
+            IsHotlineProject = createDto.IsHotlineProject
         };
 
         _context.Projects.Add(project);
@@ -129,6 +133,7 @@ public class ProjectsController : ControllerBase
             Name = project.Name,
             IsActive = project.IsActive,
             ExcludeFromInvoice = project.ExcludeFromInvoice,
+            IsHotlineProject = project.IsHotlineProject,
             CreatedDate = project.CreatedDate
         };
 
@@ -175,6 +180,7 @@ public class ProjectsController : ControllerBase
         project.Name = updateDto.Name.Trim();
         project.IsActive = updateDto.IsActive;
         project.ExcludeFromInvoice = updateDto.ExcludeFromInvoice;
+        project.IsHotlineProject = updateDto.IsHotlineProject;
 
         await _context.SaveChangesAsync();
 
