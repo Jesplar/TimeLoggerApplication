@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
   onUpdateStatus: (callback) => ipcRenderer.on('update-status', (event, info) => callback(info)),
+  selectDatabase: () => ipcRenderer.invoke('select-database'),
+  getDatabasePath: () => ipcRenderer.invoke('get-database-path'),
 });
 
 // Listen for API URL from main process

@@ -95,6 +95,9 @@ Electron/dist/
 Electron/out/
 Electron/backend/
 
+# User-specific database config
+db-config.json
+
 # Electron-builder output
 Electron/dist_electron/
 *.exe

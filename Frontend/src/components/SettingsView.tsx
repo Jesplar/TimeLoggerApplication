@@ -617,6 +617,23 @@ export const SettingsView: React.FC = () => {
                     </button>
                   </div>
                 </div>
+
+                {isElectron && (
+                  <div style={{ marginTop: '0.75rem' }}>
+                    <button
+                      onClick={async () => {
+                        const result = await (window as any).electronAPI.selectDatabase();
+                        if (result.changed) {
+                          setSuccessMessage('Database path changed. Restart the application for this to take effect.');
+                        }
+                      }}
+                      className="secondary"
+                      style={{ fontSize: '0.85rem' }}
+                    >
+                      Change Database...
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="info-section">

@@ -11,6 +11,39 @@ let apiPort = 5000;
 let isPortableMode = false;
 let databasePath = '';
 
+// Get the path to db-config.json
+function getConfigPath() {
+  const isDev = !app.isPackaged;
+  if (isPortableMode) {
+    return isDev
+      ? path.join(__dirname, 'db-config.json')
+      : path.join(process.resourcesPath, 'db-config.json');
+  }
+  return path.join(app.getPath('userData'), 'db-config.json');
+}
+
+function loadDbConfig() {
+  try {
+    const configPath = getConfigPath();
+    if (fs.existsSync(configPath)) {
+      return JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    }
+  } catch (err) {
+    console.error('Failed to read db-config.json:', err);
+  }
+  return {};
+}
+
+function saveDbConfig(config) {
+  try {
+    const configPath = getConfigPath();
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
+    console.log('Saved db-config.json:', configPath);
+  } catch (err) {
+    console.error('Failed to write db-config.json:', err);
+  }
+}
+
 // Detect portable mode and set database path
 function detectPortableModeAndSetupDatabase() {
   const isDev = !app.isPackaged;
@@ -25,8 +58,9 @@ function detectPortableModeAndSetupDatabase() {
   
   isPortableMode = fs.existsSync(portableMarkerPath);
   
+  // Compute default path
+  let defaultPath;
   if (isPortableMode) {
-    // Portable mode: database in Data folder next to app
     const dataDir = isDev 
       ? path.join(__dirname, 'Data')
       : path.join(process.resourcesPath, 'Data');
@@ -35,21 +69,75 @@ function detectPortableModeAndSetupDatabase() {
       fs.mkdirSync(dataDir, { recursive: true });
     }
     
-    databasePath = path.join(dataDir, 'timelogger.db');
+    defaultPath = path.join(dataDir, 'timelogger.db');
   } else {
-    // Installed mode: database in user's AppData
     const userDataPath = app.getPath('userData');
-    const dataDir = userDataPath;
     
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
+    if (!fs.existsSync(userDataPath)) {
+      fs.mkdirSync(userDataPath, { recursive: true });
     }
     
-    databasePath = path.join(dataDir, 'timelogger.db');
+    defaultPath = path.join(userDataPath, 'timelogger.db');
+  }
+
+  // Check config file for a custom path
+  const config = loadDbConfig();
+  if (config.databasePath) {
+    databasePath = config.databasePath;
+  } else {
+    databasePath = defaultPath;
+    saveDbConfig({ databasePath });
   }
   
   console.log('Portable Mode:', isPortableMode);
   console.log('Database Path:', databasePath);
+}
+
+// Validate the database path exists; if not, prompt the user
+async function validateDatabasePath() {
+  if (fs.existsSync(databasePath)) {
+    return; // File exists, nothing to do
+  }
+
+  const { response } = await dialog.showMessageBox({
+    type: 'warning',
+    title: 'Database Not Found',
+    message: `Database file not found:\n${databasePath}`,
+    detail: 'Would you like to create a new database at this location, or browse for an existing database file?',
+    buttons: ['Create New Database', 'Browse...'],
+    defaultId: 0,
+    noLink: true,
+  });
+
+  if (response === 1) {
+    // Browse for existing database
+    const { filePaths, canceled } = await dialog.showOpenDialog({
+      title: 'Select Database File',
+      defaultPath: path.dirname(databasePath),
+      filters: [
+        { name: 'SQLite Database', extensions: ['db'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+      properties: ['openFile'],
+    });
+
+    if (!canceled && filePaths.length > 0) {
+      databasePath = filePaths[0];
+      saveDbConfig({ databasePath });
+      console.log('User selected database:', databasePath);
+      return;
+    }
+
+    // User cancelled the browse dialog — fall through to create new
+  }
+
+  // Create New: ensure the directory exists, backend will create the file via MigrateAsync
+  const dir = path.dirname(databasePath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  saveDbConfig({ databasePath });
+  console.log('Will create new database at:', databasePath);
 }
 
 // Find available port
@@ -176,6 +264,7 @@ function createWindow() {
 app.whenReady().then(async () => {
   try {
     detectPortableModeAndSetupDatabase();
+    await validateDatabasePath();
     await startBackend();
     createWindow();
 
@@ -220,6 +309,29 @@ ipcMain.handle('check-for-updates', () => {
   if (app.isPackaged && !isPortableMode) {
     autoUpdater.checkForUpdates();
   }
+});
+
+ipcMain.handle('select-database', async () => {
+  const { filePaths, canceled } = await dialog.showOpenDialog(mainWindow, {
+    title: 'Select Database File',
+    defaultPath: path.dirname(databasePath),
+    filters: [
+      { name: 'SQLite Database', extensions: ['db'] },
+      { name: 'All Files', extensions: ['*'] },
+    ],
+    properties: ['openFile'],
+  });
+
+  if (!canceled && filePaths.length > 0) {
+    const newPath = filePaths[0];
+    saveDbConfig({ databasePath: newPath });
+    return { path: newPath, changed: true };
+  }
+  return { path: databasePath, changed: false };
+});
+
+ipcMain.handle('get-database-path', () => {
+  return databasePath;
 });
 
 // Auto-updater setup
