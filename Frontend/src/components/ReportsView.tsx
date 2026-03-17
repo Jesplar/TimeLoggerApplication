@@ -100,7 +100,9 @@ const reportOptions: ReportOption[] = [
 ];
 
 export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }) {
-  const [selectedReport, setSelectedReport] = useState<ReportType>('monthly-customer');
+  const [selectedReport, setSelectedReport] = useState<ReportType>(
+    reportOptions.find(r => !r.hidden)?.value ?? 'invoice'
+  );
   const [reportData, setReportData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -321,7 +321,8 @@ public class ReportsController : ControllerBase
                     Receipts = receiptsList
                 };
             })
-            .OrderBy(p => p.Customer)
+            .OrderBy(p => p.ExcludeFromInvoice ? 2 : p.IsHotlineProject ? 1 : 0) // Normal → Hotline → Excluded
+            .ThenBy(p => p.Customer)
             .ThenBy(p => p.ProjectNumber)
             .ToList();
 
