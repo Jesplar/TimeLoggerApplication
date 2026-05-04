@@ -853,7 +853,7 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
         </div>
       ) : (
         <>
-          <div className="report-controls">
+        <div className="report-controls">
         <div className="control-group">
           <label>Report Type</label>
           <select

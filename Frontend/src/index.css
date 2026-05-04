@@ -548,6 +548,7 @@ label {
   .control-group input {
     border: 1px solid #ddd;
     background-color: white;
+    color: #213547;
   }
   
   .report-controls {
