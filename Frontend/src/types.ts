@@ -343,3 +343,9 @@ export interface UpdateReceiptTypeDto {
   name: string;
   isActive: boolean;
 }
+
+export interface Holiday {
+  date: string;
+  name: string;
+  isHalfDay: boolean;
+}

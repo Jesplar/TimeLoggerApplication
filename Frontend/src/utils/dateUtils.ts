@@ -1,7 +1,11 @@
-import { startOfWeek, addDays, format, parseISO } from 'date-fns';
+import { startOfWeek, addDays, format, parseISO, getISOWeek } from 'date-fns';
 
 export const getWeekStart = (date: Date): Date => {
   return startOfWeek(date, { weekStartsOn: 1 }); // 1 = Monday
+};
+
+export const getWeekNumber = (date: Date): number => {
+  return getISOWeek(date);
 };
 
 export const getWeekDays = (weekStart: Date): Date[] => {

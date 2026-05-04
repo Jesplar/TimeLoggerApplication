@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { WeeklySummary, TimeEntry, Customer, Project } from '../types';
-import { getWeeklySummary, getCustomers, getProjects, deleteTimeEntry, exportTimeEntries } from '../api';
-import { getWeekStart, getWeekDays, formatDate, formatDisplayDate, todayDate } from '../utils/dateUtils';
+import React, { useState, useEffect, useMemo } from 'react';
+import { WeeklySummary, TimeEntry, Customer, Project, Holiday } from '../types';
+import { getWeeklySummary, getCustomers, getProjects, deleteTimeEntry, exportTimeEntries, getHolidays } from '../api';
+import { getWeekStart, getWeekDays, formatDate, formatDisplayDate, todayDate, getWeekNumber } from '../utils/dateUtils';
 import { addWeeks } from 'date-fns';
 import { TimeEntryDialog } from './TimeEntryDialog';
 import { BulkTimeEntryDialog } from './BulkTimeEntryDialog';
@@ -16,6 +16,7 @@ export const WeeklyView: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
   const [newEntryDate, setNewEntryDate] = useState<Date | undefined>();
@@ -24,6 +25,7 @@ export const WeeklyView: React.FC = () => {
   useEffect(() => {
     loadData();
     loadCustomers();
+    loadHolidays();
   }, [currentWeekStart, filterCustomerId, filterProjectId]);
 
   useEffect(() => {
@@ -60,6 +62,22 @@ export const WeeklyView: React.FC = () => {
       console.error('Failed to load customers', err);
     }
   };
+
+  const loadHolidays = async () => {
+    try {
+      const weekEnd = addWeeks(currentWeekStart, 1);
+      const data = await getHolidays(formatDate(currentWeekStart), formatDate(weekEnd));
+      setHolidays(data);
+    } catch (err) {
+      console.error('Failed to load holidays', err);
+    }
+  };
+
+  const holidayMap = useMemo(() => {
+    const map = new Map<string, Holiday>();
+    holidays.forEach((h) => map.set(h.date, h));
+    return map;
+  }, [holidays]);
 
   const loadProjects = async (customerId: number) => {
     try {
@@ -154,7 +172,7 @@ export const WeeklyView: React.FC = () => {
           <button onClick={handleToday}>Today</button>
           <button onClick={handleNextWeek}>Next Week →</button>
           <span style={{ fontWeight: 'bold', marginLeft: '1rem' }}>
-            Week of {formatDisplayDate(currentWeekStart)}
+            Week {getWeekNumber(currentWeekStart)} — {formatDisplayDate(currentWeekStart)}
           </span>
         </div>
       </div>
@@ -223,13 +241,20 @@ export const WeeklyView: React.FC = () => {
             {summary.days.map((day, index) => {
               const dayDate = weekDays[index];
               const isToday = formatDate(dayDate) === formatDate(todayDate());
+              const holiday = holidayMap.get(formatDate(dayDate));
+              const dayCardClass = `day-card${holiday ? (holiday.isHalfDay ? ' half-holiday' : ' holiday') : ''}`;
               
               return (
-                <div key={day.date} className="day-card" style={{ borderLeft: isToday ? '4px solid #646cff' : 'none' }}>
+                <div key={day.date} className={dayCardClass} style={{ borderLeft: isToday ? '4px solid #646cff' : 'none' }}>
                   <div className="day-header">
                     <span style={{ fontWeight: 'bold' }}>
                       {formatDisplayDate(day.date)}
                       {isToday && <span style={{ color: '#646cff', marginLeft: '0.5rem' }}>• Today</span>}
+                      {holiday && (
+                        <span className={`holiday-label ${holiday.isHalfDay ? 'half' : 'full'}`}>
+                          {holiday.name}{holiday.isHalfDay ? ' (half day)' : ''}
+                        </span>
+                      )}
                     </span>
                     <div>
                       <span style={{ marginRight: '1rem' }}>{day.dailyTotal.toFixed(2)}h</span>

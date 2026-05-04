@@ -7,6 +7,7 @@ import type {
   Receipt,
   ReceiptType,
   WeeklySummary,
+  Holiday,
   CreateTimeEntryDto,
   UpdateTimeEntryDto,
   CreateCustomerDto,
@@ -358,5 +359,13 @@ export const getDatabaseLocation = async (): Promise<{ path: string; exists: boo
 
 export const getDatabaseMode = async (): Promise<{ mode: string; isPortable: boolean }> => {
   const response = await api.get('/database/mode');
+  return response.data;
+};
+
+// Holidays
+export const getHolidays = async (startDate: string, endDate: string): Promise<Holiday[]> => {
+  const response = await api.get<Holiday[]>('/holidays', {
+    params: { startDate, endDate },
+  });
   return response.data;
 };
