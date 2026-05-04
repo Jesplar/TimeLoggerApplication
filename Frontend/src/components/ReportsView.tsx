@@ -525,7 +525,7 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
           // Regular Hours Section with Time Code breakdown
           if (project.regularHours > 0) {
             row = worksheet.getRow(currentRow);
-            row.values = ['═══ REGULAR HOURS ═══', '', '', '', '', ''];
+            row.values = ['═══ OFFICE HOURS ═══', '', '', '', '', ''];
             row.font = { bold: true };
             currentRow++;
             
@@ -542,7 +542,7 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
             });
             
             row = worksheet.getRow(currentRow);
-            row.values = ['REGULAR SUBTOTAL:', `${project.regularHours} hours`, '', '', 'Total:', `€${project.regularCost.toFixed(2)}`];
+            row.values = ['OFFICE SUBTOTAL:', `${project.regularHours} hours`, '', '', 'Total:', `€${project.regularCost.toFixed(2)}`];
             row.font = { bold: true };
             currentRow++;
             
@@ -653,7 +653,7 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
         // Not needed for hotline projects
         if (!project.isHotlineProject) {
         row = worksheet.getRow(currentRow);
-        row.values = ['═══ TIME ENTRY DETAILS ═══', '', '', '', '', '', ''];
+        row.values = ['═══ TRAVEL TIME ENTRY DETAILS ═══', '', '', '', '', '', ''];
         row.font = { bold: true };
         currentRow++;
         
@@ -662,13 +662,14 @@ export function ReportsView({ receiptsOnly = false }: { receiptsOnly?: boolean }
         row.font = { bold: true };
         currentRow++;
         
-        project.entries.forEach(entry => {
+        // For now, only do this for travel entries
+        project.entries.filter(xx => xx.isOnSite).forEach((entry) => {
           worksheet.getRow(currentRow).values = [
             format(new Date(entry.date), 'EEE, MMM dd, yyyy'),
             `${entry.timeCode} - ${entry.timeCodeDescription}`,
             entry.description || '(no description)',
             entry.hours.toFixed(2),
-            entry.isOnSite ? 'On-Site' : 'Regular',
+            entry.isOnSite ? 'On-Site' : 'Office',
             entry.travelHours ? `${entry.travelHours.toFixed(2)} hrs` : '-',
             entry.travelKm ? `${entry.travelKm.toFixed(0)} km` : '-'
           ];
