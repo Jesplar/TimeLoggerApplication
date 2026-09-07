@@ -77,6 +77,7 @@ export interface DailySummary {
   date: string;
   entries: TimeEntry[];
   dailyTotal: number;
+  dailyTravelHours: number;
 }
 
 export interface ProjectTotal {
@@ -85,6 +86,7 @@ export interface ProjectTotal {
   projectNumber: string;
   customerName: string;
   totalHours: number;
+  travelHours: number;
 }
 
 export interface WeeklySummary {
@@ -92,6 +94,7 @@ export interface WeeklySummary {
   days: DailySummary[];
   projectTotals: ProjectTotal[];
   totalHours: number;
+  totalTravelHours: number;
 }
 
 export interface CreateCustomerDto {

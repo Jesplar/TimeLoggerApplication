@@ -227,12 +227,24 @@ export const WeeklyView: React.FC = () => {
                   <span>
                     <strong>{pt.customerName}</strong> - {pt.projectNumber} {pt.projectName}
                   </span>
-                  <span style={{ fontWeight: 'bold' }}>{pt.totalHours.toFixed(2)}h</span>
+                  <span style={{ fontWeight: 'bold' }}>
+                    {(pt.totalHours + pt.travelHours).toFixed(2)}h
+                    {pt.travelHours > 0 && (
+                      <span style={{ color: '#666', fontSize: '0.85em', fontWeight: 'normal' }}>
+                        {' '}({pt.totalHours.toFixed(2)}h, {pt.travelHours.toFixed(2)}h 🚗)
+                      </span>
+                    )}
+                  </span>
                 </div>
               ))
             )}
             <div className="total-hours">
-              Total: {summary.totalHours.toFixed(2)}h
+              Total: {(summary.totalHours + summary.totalTravelHours).toFixed(2)}h
+              {summary.totalTravelHours > 0 && (
+                <span style={{ fontSize: '0.85em', fontWeight: 'normal' }}>
+                  {' '}({summary.totalHours.toFixed(2)}h, {summary.totalTravelHours.toFixed(2)}h 🚗)
+                </span>
+              )}
             </div>
           </div>
 
@@ -257,7 +269,14 @@ export const WeeklyView: React.FC = () => {
                       )}
                     </span>
                     <div>
-                      <span style={{ marginRight: '1rem' }}>{day.dailyTotal.toFixed(2)}h</span>
+                      <span style={{ marginRight: '1rem' }}>
+                        {(day.dailyTotal + day.dailyTravelHours).toFixed(2)}h
+                        {day.dailyTravelHours > 0 && (
+                          <span style={{ color: '#666', fontSize: '0.85em' }}>
+                            {' '}({day.dailyTotal.toFixed(2)}h, {day.dailyTravelHours.toFixed(2)}h 🚗)
+                          </span>
+                        )}
+                      </span>
                       <button onClick={() => handleAddEntry(dayDate)} style={{ padding: '0.25rem 0.5rem' }}>
                         +
                       </button>

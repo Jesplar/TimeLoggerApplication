@@ -153,7 +153,8 @@ public class TimeEntriesController : ControllerBase
                     CreatedDate = e.Entry.CreatedDate,
                     ModifiedDate = e.Entry.ModifiedDate
                 }).ToList(),
-                DailyTotal = dayEntries.Sum(e => e.CalculatedHours)
+                DailyTotal = dayEntries.Sum(e => e.CalculatedHours),
+                DailyTravelHours = dayEntries.Sum(e => e.Entry.TravelHours ?? 0)
             });
         }
 
@@ -172,7 +173,8 @@ public class TimeEntriesController : ControllerBase
                 ProjectName = g.Key.Name,
                 ProjectNumber = g.Key.ProjectNumber,
                 CustomerName = g.Key.CustomerName,
-                TotalHours = g.Sum(e => e.CalculatedHours)
+                TotalHours = g.Sum(e => e.CalculatedHours),
+                TravelHours = g.Sum(e => e.Entry.TravelHours ?? 0)
             })
             .OrderBy(p => p.CustomerName)
             .ThenBy(p => p.ProjectNumber)
@@ -183,7 +185,8 @@ public class TimeEntriesController : ControllerBase
             WeekStartDate = weekStart,
             Days = dailySummaries,
             ProjectTotals = projectTotals,
-            TotalHours = entriesWithHours.Sum(e => e.CalculatedHours)
+            TotalHours = entriesWithHours.Sum(e => e.CalculatedHours),
+            TotalTravelHours = entriesWithHours.Sum(e => e.Entry.TravelHours ?? 0)
         };
 
         return Ok(summary);

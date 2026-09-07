@@ -57,6 +57,7 @@ public class WeeklySummaryDto
     public List<DailySummaryDto> Days { get; set; } = new();
     public List<ProjectTotalDto> ProjectTotals { get; set; } = new();
     public decimal TotalHours { get; set; }
+    public decimal TotalTravelHours { get; set; }
 }
 
 public class DailySummaryDto
@@ -64,6 +65,7 @@ public class DailySummaryDto
     public DateTime Date { get; set; }
     public List<TimeEntryDto> Entries { get; set; } = new();
     public decimal DailyTotal { get; set; }
+    public decimal DailyTravelHours { get; set; }
 }
 
 public class ProjectTotalDto
@@ -73,4 +75,5 @@ public class ProjectTotalDto
     public string ProjectNumber { get; set; } = string.Empty;
     public string CustomerName { get; set; } = string.Empty;
     public decimal TotalHours { get; set; }
+    public decimal TravelHours { get; set; }
 }
